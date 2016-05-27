@@ -8,56 +8,8 @@
 """
 
 import numpy as np
-import pandas
-from matplotlib.pylab import plt
-
-
-def load_train_data():
-    """
-    加载训练数据
-    :return:
-    """
-    train = pandas.read_csv('../dataset/train.csv')
-    train_digit_labels = []
-    train_digit_datas = []
-    for index, row in train.iterrows():
-        key = row['label']
-        train_digit_labels.append(key)
-        data = np.array(row[1:])
-        train_digit_datas.append(data)
-
-    return train_digit_datas, train_digit_labels
-
-
-def load_test_data():
-    """
-    加载训练数据
-    :return:
-    """
-    test = pandas.read_csv('../dataset/test.csv')
-    test_digit_datas = []
-    for index, row in test.iterrows():
-        data = np.array(row[0:])
-        test_digit_datas.append(data)
-
-    return test_digit_datas
-
-
-def plot_count_digit_img(digit_datas, count=100):
-    """
-    绘制100个数据
-    :return:
-    """
-    digit_datas = np.matrix(digit_datas)
-    random_index = np.arange(0, count)
-    for i in random_index:
-        plt.subplot(10, 10, i + 1)  # 假设100个
-        plt.subplots_adjust(wspace=0.1, hspace=0.1)  # 调整subplot的间隔
-        data = digit_datas[i].reshape((28, 28))
-        plt.imshow(data, cmap=plt.get_cmap('gray'))
-        plt.xticks([])
-        plt.yticks([])
-    plt.show()
+import load_save_datas as lsd
+# import plot_digit
 
 
 def knn_classify(test_digit_datas, train_digit_datas, train_digit_labels, k):
@@ -103,24 +55,15 @@ def knn_classify(test_digit_datas, train_digit_datas, train_digit_labels, k):
     return predict_labels
 
 
-def save_predicts(predicts_label, filename):
-    """
-    保存预测结果到 csv 文件
-    :return:
-    """
-    predicts_label.insert(0, 10)
-    df = pandas.DataFrame(predicts_label)
-    df.to_csv(filename)
-
 if __name__ == '__main__':
     print 'loading training datas...'
-    train_datas, train_labels = load_train_data()
-    # plot_count_digit_img(train_datas)
+    train_datas, train_labels = lsd.load_train_data('../dataset/train.csv')
+    # plot_digit.plot_count_digit_img(train_datas)
     print 'loading test datas...'
-    test_datas = load_test_data()
+    test_datas = lsd.load_test_data('../dataset/test.csv')
     print 'run KNN...'
     predicts = knn_classify(test_datas, train_datas, train_labels, 2)
-    # plot_count_digit_img(test_datas)
+    # plot_digit.plot_count_digit_img(test_datas)
     print 'predict labels:'
     print predicts
-    save_predicts(predicts, '../dataset/sample_submission.csv')
+    lsd.save_predicts(predicts, '../dataset/sample_submission.csv')
