@@ -3,12 +3,14 @@
 
 """
 @author: MarkLiu
+The slowest!  Average Accuracy: 0.968
 @file: knn.py
 @time: 2016/5/26 21:10
 """
 
 import numpy as np
 import load_save_datas as lsd
+from sklearn.decomposition import PCA
 # import plot_digit
 
 
@@ -22,6 +24,15 @@ def knn_classify(test_digit_datas, train_digit_datas, train_digit_labels, k):
     :return:
     """
     test_digit_datas = np.matrix(test_digit_datas)
+    train_digit_datas = np.matrix(train_digit_datas)
+
+    print 'before pca train_digit_datas: ', np.shape(train_digit_datas)
+    # PCA降维
+    pca = PCA(n_components=0.9, whiten=True)
+    train_digit_datas = pca.fit_transform(train_digit_datas)
+    print 'after pca train_digit_datas: ', np.shape(train_digit_datas)
+    test_digit_datas = pca.transform(test_digit_datas)
+
     # 将 test_digit_datas 扩展成训练数据集相同shape的矩阵，便于距离的计算
     m_train = len(train_digit_datas)
     m_test = len(test_digit_datas)
