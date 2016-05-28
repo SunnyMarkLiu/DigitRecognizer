@@ -32,17 +32,17 @@ def read_data(filname, limit=None):
         if limit != None and index == limit + 1:
             break
 
-    return (data, labels)
+    return data, labels
 
 
 print "Reading train data"
 train, target = read_data("../dataset/train.csv")
 
-pca_components = [1, 2, 3, 4, 5, 10, 20, 25, 30, 50, 70, 100]
+pca_components = [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.9]
 pca_fits = []
 
 for comp_size in pca_components:
-    print "Fitting pca with %d components" % comp_size
+    print "Fitting pca with %f components" % comp_size
     pca_fits.append(decomposition.PCA(n_components=comp_size).fit(train))
 
 figure = plt.figure()
@@ -51,16 +51,18 @@ t = np.array(target)
 
 choosen_numbers = []
 
-choosen_numbers.append(np.argwhere(t == 0)[-3])
-choosen_numbers.append(np.argwhere(t == 1)[-3])
-choosen_numbers.append(np.argwhere(t == 2)[-3])
-choosen_numbers.append(np.argwhere(t == 3)[-3])
-choosen_numbers.append(np.argwhere(t == 4)[-3])
-choosen_numbers.append(np.argwhere(t == 5)[-3])
-choosen_numbers.append(np.argwhere(t == 6)[-3])
-choosen_numbers.append(np.argwhere(t == 7)[-3])
-choosen_numbers.append(np.argwhere(t == 8)[-3])
-choosen_numbers.append(np.argwhere(t == 9)[-3])
+print 'np.argwhere(t == 0):'
+print np.argwhere(t == 0)
+choosen_numbers.append(np.argwhere(t == 0)[0])
+choosen_numbers.append(np.argwhere(t == 1)[0])
+choosen_numbers.append(np.argwhere(t == 2)[0])
+choosen_numbers.append(np.argwhere(t == 3)[0])
+choosen_numbers.append(np.argwhere(t == 4)[0])
+choosen_numbers.append(np.argwhere(t == 5)[0])
+choosen_numbers.append(np.argwhere(t == 6)[0])
+choosen_numbers.append(np.argwhere(t == 7)[0])
+choosen_numbers.append(np.argwhere(t == 8)[0])
+choosen_numbers.append(np.argwhere(t == 9)[0])
 
 pca_index = 1
 for n in choosen_numbers:

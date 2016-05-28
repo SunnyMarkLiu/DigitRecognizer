@@ -7,10 +7,11 @@ Average Accuracy: 0.968
 @file: sklearn_knn.py
 @time: 2016/5/27 14:27
 """
-import load_save_datas as lsd
+import numpy as np
 from sklearn import neighbors
 from sklearn.decomposition import PCA
-import numpy as np
+
+from dataset import load_save_datas as lsd
 
 
 def sklearn_knn_classify(test_digit_datas, train_digit_datas, train_digit_labels):

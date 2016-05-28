@@ -18,15 +18,18 @@ train = pd.read_csv("../dataset/train.csv")
 test = pd.read_csv("../dataset/test.csv")
 
 train_x = train.values[:, 1:]
-train_y = train.ix[:, 0]
+train_y = train.values[:, 0]
 test_x = test.values
 
 print 'load datas done.'
+
+# PCA 降维
 pca = PCA(n_components=0.9, whiten=True)
 train_x = pca.fit_transform(train_x)
 test_x = pca.transform(test_x)
-
 print 'PCA done.'
+
+print 'SVM training...'
 svc = svm.SVC(kernel='rbf', C=3)
 svc.fit(train_x, train_y)
 

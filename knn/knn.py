@@ -9,8 +9,11 @@ The slowest!  Average Accuracy: 0.968
 """
 
 import numpy as np
-import load_save_datas as lsd
 from sklearn.decomposition import PCA
+
+from dataset import load_save_datas as lsd
+
+
 # import plot_digit
 
 
