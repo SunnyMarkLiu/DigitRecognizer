@@ -31,15 +31,16 @@ def calcuate_retained_variance(original_data, inverse_transformed_data):
     return retained_variance
 
 
-def try_n_components(train_data, best_retained_variance, step=0.01):
+def try_n_components(train_data, best_retained_variance, trycount=20):
     """
     尝试不同的 n_components，计算 retained_variances
     :param train_data:
     :param best_retained_variance: 0 ~ 1 ，主成分所占百分比
-    :param step: pca_components step
+    :param trycount: pca_components step = (1 - best_retained_variance) / trycount
     :return:
     """
     # 待测试的 n_components
+    step = (1 - best_retained_variance) / trycount
     pca_components = np.arange(best_retained_variance * 0.9, 1, step=step)
     # pca_components = [0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.65, 0.7,
     #                   0.75, 0.8, 0.85, 0.9, 0.92, 0.93, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99]
