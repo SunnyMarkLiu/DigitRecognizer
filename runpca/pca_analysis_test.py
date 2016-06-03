@@ -38,7 +38,7 @@ def read_data(filname, limit=None):
 print "Reading train data"
 train, target = read_data("../dataset/train.csv")
 
-pca_components = [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.9]
+pca_components = [1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110]
 pca_fits = []
 
 for comp_size in pca_components:
