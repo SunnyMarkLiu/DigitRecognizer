@@ -7,6 +7,7 @@ tensorflow convolutional neural network
 @author: MarkLiu
 @time  : 16-10-23 下午4:43
 """
+import pandas
 import tensorflow as tf
 import numpy as np
 from dataset import load_save_datas as lsd
@@ -90,6 +91,9 @@ class DigitsModel(object):
         # accuracy metric
         self.accuracy = tf.reduce_mean(tf.cast(self.predict_matches, tf.float32))
 
+        # test op
+        self.test_op = tf.argmax(self.read_out, 1)
+
     def init(self):
         self.create_model()
         self.init_training_run_op()
@@ -114,6 +118,10 @@ class DigitsModel(object):
         }
         return self.sess.run(self.accuracy, feed_dict=feed_dict)
 
+    def clarify(self, features):
+        test_labels = self.sess.run(self.test_op, feed_dict={self.x: features, self.keep_prob: 1.0})
+        return test_labels
+
 
 def load_training_datas():
     """
@@ -126,6 +134,16 @@ def load_training_datas():
     for i in xrange(len(labels)):
         labels_mat[i, labels[i]] = 1
     return features_mat, labels_mat
+
+
+def load_test_datas():
+    """
+    load training data, use one-hot encoding
+    """
+    features = lsd.load_test_data('../dataset/test.csv')
+    features_mat = np.mat(features)
+    features_mat = np.divide(features_mat, 255.0)
+    return features_mat
 
 
 def generate_batch(features, labels, batch_size):
@@ -142,7 +160,7 @@ print 'load training data...Done!'
 # training params
 BATCH_SIZE = 200
 TRAIN_SPLIT = 0.85  # training/validation split
-TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / BATCH_SIZE) * 100
+TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / BATCH_SIZE) * 500
 print 'training epochs: ', TRAINING_STEPS
 # split data into training and validation sets
 train_samples = int(len(features) * TRAIN_SPLIT)
@@ -172,3 +190,10 @@ plt.ylim(bottom=0.95, top=1)
 plt.xlim(0, 300)
 plt.plot(accuracy_history)
 fig.savefig('accuracy_history.png', dpi=75)
+
+# test data
+test_features = load_test_datas()
+test_labels = model.clarify(test_features)
+test_labels = np.append([100], test_labels)
+df = pandas.DataFrame(test_labels)
+df.to_csv('tf_cnn_test_labels.csv',sep=',')
