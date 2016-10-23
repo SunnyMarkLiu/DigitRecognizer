@@ -186,8 +186,8 @@ for epoch in xrange(TRAINING_STEPS):
 
 # plot validation accuracy, and adjust params
 fig = plt.figure()
-plt.ylim(bottom=0.95, top=1)
-plt.xlim(0, 300)
+plt.ylim(bottom=0, top=1)
+plt.xlim(0, len(accuracy_history))
 plt.plot(accuracy_history)
 fig.savefig('accuracy_history.png', dpi=75)
 
