@@ -10,6 +10,10 @@ tensorflow convolutional neural network
 import tensorflow as tf
 import numpy as np
 from dataset import load_save_datas as lsd
+import matplotlib as mpl
+
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 
 
 class DigitsModel(object):
@@ -161,3 +165,10 @@ for epoch in xrange(TRAINING_STEPS):
 
     batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
     model.train_step(batch_features, batch_labels)
+
+# plot validation accuracy, and adjust params
+fig = plt.figure()
+plt.ylim(bottom=0.95, top=1)
+plt.xlim(0, 300)
+plt.plot(accuracy_history)
+fig.savefig('accuracy_history.png', dpi=75)
