@@ -122,6 +122,10 @@ class DigitsModel(object):
         test_labels = self.sess.run(self.test_op, feed_dict={self.x: features, self.keep_prob: 1.0})
         return test_labels
 
+    def get_layer(self, features):
+        conv1layer, pool1layer, conv2layer, pool2layer = self.sess.run([self.conv1,self.pool1, self.conv2,self.pool2],
+                                                                       feed_dict={self.x: features, self.keep_prob: 1.0})
+        return self.sess.run([tf.shape(conv1layer), tf.shape(pool1layer), tf.shape(conv2layer), tf.shape(pool2layer)])
 
 def load_training_datas():
     """
@@ -173,6 +177,9 @@ model = DigitsModel()
 model.init()
 
 accuracy_history = []
+
+# 测试时输出各层的结构信息
+# print model.get_layer(train_features[:1])
 
 for epoch in xrange(TRAINING_STEPS):
 
