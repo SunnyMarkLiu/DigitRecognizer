@@ -59,8 +59,8 @@ class DigitsModel(object):
         self.W_conv2 = self.create_weight_variable([3, 3, 32, 64], 'W_conv2')
         self.b_conv2 = self.create_bias_variable([64], 'b_conv2')
         self.conv2 = tf.nn.relu(self.create_conv2d(self.pool1, self.W_conv2) + self.b_conv2)
-        self.W_conv2_2 = self.create_weight_variable([3, 3, 64, 64], 'W_conv2')
-        self.b_conv2_2 = self.create_bias_variable([64], 'b_conv2')
+        self.W_conv2_2 = self.create_weight_variable([3, 3, 64, 64], 'W_conv2_2')
+        self.b_conv2_2 = self.create_bias_variable([64], 'b_conv2_2')
         self.conv2_2 = tf.nn.relu(self.create_conv2d(self.conv2, self.W_conv2_2) + self.b_conv2_2)
         self.pool2 = self.create_max_pool_2x2(self.conv2)
 
@@ -106,6 +106,8 @@ class DigitsModel(object):
         self.init_training_run_op()
 
         init_op = tf.initialize_all_variables()
+        # 'Saver' op to save and restore all the variables
+        self.saver = tf.train.Saver()
         self.sess = tf.Session()
         self.sess.run(init_op)
 
@@ -137,6 +139,20 @@ class DigitsModel(object):
         print 'pool1layer: ', self.sess.run(tf.shape(pool1layer))
         print 'conv2layer: ', self.sess.run(tf.shape(conv2layer))
         print 'pool2layer: ', self.sess.run(tf.shape(pool2layer))
+
+    def saveModel(self, model_path):
+        """
+        保存最佳模型
+        :return:
+        """
+        self.saver.save(self.sess, save_path=model_path)
+
+    def restoreModel(self, model_path):
+        """
+        保存最佳模型
+        :return:
+        """
+        self.saver.restore(self.sess, save_path=model_path)
 
 
 def load_training_datas():
@@ -174,7 +190,7 @@ features, labels = load_training_datas()
 print 'load training data...Done!'
 
 # training params
-BATCH_SIZE = 50
+BATCH_SIZE = 1000
 TRAIN_SPLIT = 0.90  # training/validation split
 TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / BATCH_SIZE) * 100
 print 'training epochs: ', TRAINING_STEPS
@@ -193,10 +209,19 @@ accuracy_history = []
 # 测试时输出各层的结构信息
 model.get_layer(train_features[:1])
 
+best_validation_accuracy = 0.0
+# 保存 validation 的最佳模型
+best_model_path = "model/best_digit_model.ckpt"
+
 for epoch in xrange(TRAINING_STEPS):
 
     if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
         accuracy = model.get_accuracy(features=validation_features, labels=validation_labels)
+        if accuracy > best_validation_accuracy:
+            best_validation_accuracy = accuracy
+            # save the best model
+            print 'save the best model...'
+            model.saveModel(best_model_path)
         accuracy_history.append(accuracy)
         print 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
 
@@ -214,6 +239,9 @@ fig.savefig('accuracy_history.png', dpi=75)
 del train_samples
 del train_features
 del accuracy_history
+
+print 'restore best model...'
+model.restoreModel(best_model_path)
 
 print 'predict test datas...'
 # test data
