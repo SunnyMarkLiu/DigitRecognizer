@@ -190,9 +190,9 @@ features, labels = load_training_datas()
 print 'load training data...Done!'
 
 # training params
-BATCH_SIZE = 1000
-TRAIN_SPLIT = 0.90  # training/validation split
-TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / BATCH_SIZE) * 100
+BATCH_SIZE = 200
+TRAIN_SPLIT = 0.85  # training/validation split
+TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / BATCH_SIZE) * 500
 print 'training epochs: ', TRAINING_STEPS
 # split data into training and validation sets
 train_samples = int(len(features) * TRAIN_SPLIT)
