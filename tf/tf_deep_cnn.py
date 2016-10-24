@@ -28,7 +28,7 @@ class DigitsModel(object):
 
     def create_bias_variable(self, shape, name):
         initial = tf.constant(np.random.rand(), shape=shape)
-        return tf.Variable(initial)
+        return tf.Variable(initial, name=name)
 
     def create_conv2d(self, x, W):
         return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
@@ -123,9 +123,14 @@ class DigitsModel(object):
         return test_labels
 
     def get_layer(self, features):
-        conv1layer, pool1layer, conv2layer, pool2layer = self.sess.run([self.conv1,self.pool1, self.conv2,self.pool2],
-                                                                       feed_dict={self.x: features, self.keep_prob: 1.0})
-        return self.sess.run([tf.shape(conv1layer), tf.shape(pool1layer), tf.shape(conv2layer), tf.shape(pool2layer)])
+        conv1layer, pool1layer, conv2layer, pool2layer = self.sess.run([self.conv1, self.pool1, self.conv2, self.pool2],
+                                                                       feed_dict={self.x: features,
+                                                                                  self.keep_prob: 1.0})
+        print 'conv1layer: ', self.sess.run(tf.shape(conv1layer))
+        print 'pool1layer: ', self.sess.run(tf.shape(pool1layer))
+        print 'conv2layer: ', self.sess.run(tf.shape(conv2layer))
+        print 'pool2layer: ', self.sess.run(tf.shape(pool2layer))
+
 
 def load_training_datas():
     """
@@ -179,28 +184,28 @@ model.init()
 accuracy_history = []
 
 # 测试时输出各层的结构信息
-# print model.get_layer(train_features[:1])
+model.get_layer(train_features[:1])
 
-for epoch in xrange(TRAINING_STEPS):
-
-    if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
-        accuracy = model.get_accuracy(features=validation_features, labels=validation_labels)
-        accuracy_history.append(accuracy)
-        print 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
-
-    batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
-    model.train_step(batch_features, batch_labels)
-
-# plot validation accuracy, and adjust params
-fig = plt.figure()
-plt.ylim(bottom=0, top=1)
-plt.xlim(0, len(accuracy_history))
-plt.plot(accuracy_history)
-fig.savefig('accuracy_history.png', dpi=75)
-
-# test data
-test_features = load_test_datas()
-test_labels = model.clarify(test_features)
-test_labels = np.append([100], test_labels)
-df = pandas.DataFrame(test_labels)
-df.to_csv('tf_cnn_test_labels.csv',sep=',')
+# for epoch in xrange(TRAINING_STEPS):
+#
+#     if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
+#         accuracy = model.get_accuracy(features=validation_features, labels=validation_labels)
+#         accuracy_history.append(accuracy)
+#         print 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
+#
+#     batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
+#     model.train_step(batch_features, batch_labels)
+#
+# # plot validation accuracy, and adjust params
+# fig = plt.figure()
+# plt.ylim(bottom=0, top=1)
+# plt.xlim(0, len(accuracy_history))
+# plt.plot(accuracy_history)
+# fig.savefig('accuracy_history.png', dpi=75)
+#
+# # test data
+# test_features = load_test_datas()
+# test_labels = model.clarify(test_features)
+# test_labels = np.append([100], test_labels)
+# df = pandas.DataFrame(test_labels)
+# df.to_csv('tf_cnn_test_labels.csv', sep=',')
