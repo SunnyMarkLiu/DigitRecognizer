@@ -4,6 +4,8 @@
 """
 tensorflow convolutional neural network
 
+conv/pool/relu/conv/pool/relu/fc/readout
+
 @author: MarkLiu
 @time  : 16-10-23 下午4:43
 """
@@ -186,26 +188,26 @@ accuracy_history = []
 # 测试时输出各层的结构信息
 model.get_layer(train_features[:1])
 
-# for epoch in xrange(TRAINING_STEPS):
-#
-#     if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
-#         accuracy = model.get_accuracy(features=validation_features, labels=validation_labels)
-#         accuracy_history.append(accuracy)
-#         print 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
-#
-#     batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
-#     model.train_step(batch_features, batch_labels)
-#
-# # plot validation accuracy, and adjust params
-# fig = plt.figure()
-# plt.ylim(bottom=0, top=1)
-# plt.xlim(0, len(accuracy_history))
-# plt.plot(accuracy_history)
-# fig.savefig('accuracy_history.png', dpi=75)
-#
-# # test data
-# test_features = load_test_datas()
-# test_labels = model.clarify(test_features)
-# test_labels = np.append([100], test_labels)
-# df = pandas.DataFrame(test_labels)
-# df.to_csv('tf_cnn_test_labels.csv', sep=',')
+for epoch in xrange(TRAINING_STEPS):
+
+    if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
+        accuracy = model.get_accuracy(features=validation_features, labels=validation_labels)
+        accuracy_history.append(accuracy)
+        print 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
+
+    batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
+    model.train_step(batch_features, batch_labels)
+
+# plot validation accuracy, and adjust params
+fig = plt.figure()
+plt.ylim(bottom=0, top=1)
+plt.xlim(0, len(accuracy_history))
+plt.plot(accuracy_history)
+fig.savefig('accuracy_history.png', dpi=75)
+
+# test data
+test_features = load_test_datas()
+test_labels = model.clarify(test_features)
+test_labels = np.append([100], test_labels)
+df = pandas.DataFrame(test_labels)
+df.to_csv('tf_cnn_test_labels.csv', sep=',')
