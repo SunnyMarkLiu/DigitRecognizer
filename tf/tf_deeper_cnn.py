@@ -90,7 +90,7 @@ class DigitsModel(object):
         self.loss_function = tf.nn.softmax_cross_entropy_with_logits(self.read_out, self.y_correct)
 
         # training op
-        self.training_op = tf.train.AdamOptimizer(1e-5).minimize(self.loss_function)
+        self.training_op = tf.train.AdamOptimizer(1e-4).minimize(self.loss_function)
 
         # match predicted values against the correct ones, True or False
         self.predict_matches = tf.equal(tf.argmax(self.read_out, 1), tf.argmax(self.y_correct, 1))
@@ -174,9 +174,9 @@ features, labels = load_training_datas()
 print 'load training data...Done!'
 
 # training params
-BATCH_SIZE = 200
-TRAIN_SPLIT = 0.85  # training/validation split
-TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / BATCH_SIZE) * 500
+BATCH_SIZE = 50
+TRAIN_SPLIT = 0.90  # training/validation split
+TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / BATCH_SIZE) * 100
 print 'training epochs: ', TRAINING_STEPS
 # split data into training and validation sets
 train_samples = int(len(features) * TRAIN_SPLIT)
@@ -210,9 +210,19 @@ plt.xlim(0, len(accuracy_history))
 plt.plot(accuracy_history)
 fig.savefig('accuracy_history.png', dpi=75)
 
+# delete some data to save memorry
+del train_samples
+del train_features
+del accuracy_history
+
+print 'predict test datas...'
 # test data
 test_features = load_test_datas()
-test_labels = model.clarify(test_features)
+test_batch_size = 100
+test_labels = np.array([], dtype=np.int32)
+for i in range(len(test_features) / test_batch_size):
+    labels = model.clarify(test_features[test_batch_size * i: test_batch_size * (i + 1)])
+    test_labels = np.append(test_labels, labels)
 test_labels = np.append([100], test_labels)
 df = pandas.DataFrame(test_labels)
 df.to_csv('tf_cnn_test_labels.csv', sep=',')
