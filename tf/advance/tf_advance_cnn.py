@@ -13,6 +13,7 @@ import tensorflow as tf
 import numpy as np
 from dataset import load_save_datas as lsd
 import matplotlib as mpl
+import matrix_io
 
 mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -39,12 +40,15 @@ class DigitsModel(object):
 
     def create_model(self):
         # input features
-        self.x = tf.placeholder(tf.float32, shape=[None, 784])
+        self.x = tf.placeholder(tf.float32, shape=[None, 24 * 24])
         # reshape features to 2d shape
-        self.x_image = tf.reshape(self.x, [-1, 28, 28, 1])
+        self.x_image = tf.reshape(self.x, [-1, 24, 24, 1])
 
         # correct labels
         self.y_correct = tf.placeholder(tf.float32, [None, 10])
+
+        # dropout layer: keep probability
+        self.keep_prob = tf.placeholder(tf.float32)  # how many features to keep
 
         # layer1: conv + conv + pool
         self.W_conv1 = self.create_weight_variable([3, 3, 1, 32], 'W_conv1')
@@ -69,10 +73,9 @@ class DigitsModel(object):
         self.dropout2 = tf.nn.dropout(self.pool2, self.keep_prob)
 
         # fully-connected layer
-        # connects 3136 features (7*7*64) from _pool2 to 1024 _fc nodes
-        self.W_fc1 = self.create_weight_variable([7 * 7 * 64, 1024], 'W_fc1')
+        self.W_fc1 = self.create_weight_variable([6 * 6 * 64, 1024], 'W_fc1')
         self.b_fc1 = self.create_bias_variable([1024], 'b_fc1')
-        self.pool2_flat = tf.reshape(self.dropout2, [-1, 7 * 7 * 64])
+        self.pool2_flat = tf.reshape(self.dropout2, [-1, 6 * 6 * 64])
         self.full_con_1 = tf.nn.relu(tf.matmul(self.pool2_flat, self.W_fc1) + self.b_fc1)
 
         self.W_fc2 = self.create_weight_variable([1024, 1024], 'W_fc2')
@@ -82,9 +85,6 @@ class DigitsModel(object):
         self.W_fc3 = self.create_weight_variable([1024, 256], 'W_fc3')
         self.b_fc3 = self.create_bias_variable([256], 'b_fc3')
         self.full_con_3 = tf.nn.relu(tf.matmul(self.full_con_2, self.W_fc3) + self.b_fc3)
-
-        # dropout layer
-        self.keep_prob = tf.placeholder(tf.float32)  # how many features to keep
         self.dropout = tf.nn.dropout(self.full_con_3, self.keep_prob)
 
         # readout layer
@@ -154,56 +154,84 @@ class DigitsModel(object):
         print 'pool2layer: ', self.sess.run(tf.shape(pool2layer))
 
 
-def load_extend_training_datas(filename):
-    train = pandas.read_csv(filename)
-    features = []
-    labels = []
-    for index, row in train.iterrows():
-        key = row['label']
-        labels.append(key)
-        print row['images']
-        features.append(row['images'])
-
-    return features, labels
-
-
 def extend_training_datas():
     """
-    extend training datas, expand twice. 42000 -> 84000
+    extend training datas, expand fourth. 42000 -> 168000
     """
-    features, labels = lsd.load_train_data('../../dataset/train.csv')
+    old_features, old_labels = lsd.load_train_data('../../dataset/train.csv')
 
     # extend the training datas
     extend_features = []
     extend_labels = []
-    print 'training datas:', len(features)
-    for i in range(len(features)):
-        feature = features[i]
-        label = labels[i]
+    print 'extend training datas, expand fourth. 42000 -> 84000'
+    for i in xrange(len(old_features)):
+        feature = old_features[i]
+        label = old_labels[i]
         feature = np.mat(feature)
         feature = feature.reshape(28, 28)
-        for m in range(0, 4, 2):
-            for n in range(0, 4, 2):
-                f_temp = feature[n:28 - 2 + n, m:28 - 2 + m]
-                f_temp = f_temp.reshape(1, 26 * 26)
+        for m in range(0, 5, 4):
+            for n in range(0, 5, 4):
+                f_temp = feature[n:28 - 4 + n, m:28 - 4 + m]
+                f_temp = f_temp.reshape(1, 24 * 24)
                 f_temp = f_temp.tolist()[0]
                 extend_features.append(f_temp)
                 extend_labels.append(label)
 
         print 'train:', i, np.shape(extend_features), "-", np.shape(extend_labels)
 
-    df = pandas.DataFrame({'label': extend_labels, 'images': extend_features})
-    df.to_csv('training_extend.csv', sep=',', index=True, columns=["label", "images"])
+    matrix_io.save(extend_features, 'extend_train_features.pkl')
+    matrix_io.save(extend_labels, 'extend_train_labels.pkl')
+    print 'training datas count:', len(old_features), '-> extend training datas:', len(extend_features)
+
     return extend_features, extend_labels
 
 
-def load_test_datas():
+def extend_test_datas():
     """
-    load training data, use one-hot encoding
+    extend test datas, expand fourth. 28000 -> 112000
     """
-    features = lsd.load_test_data('../dataset/test.csv')
-    features_mat = np.mat(features)
-    features_mat = np.divide(features_mat, 255.0)
+    old_test_features = lsd.load_test_data('../../dataset/test.csv')
+
+    # extend the test datas
+    extend_features = []
+    print 'extend test datas, expand fourth. 28000 -> 112000'
+    for i in xrange(len(old_test_features)):
+        feature = old_test_features[i]
+        feature = np.mat(feature)
+        feature = feature.reshape(28, 28)
+        for m in range(0, 5, 4):
+            for n in range(0, 5, 4):
+                f_temp = feature[n:28 - 4 + n, m:28 - 4 + m]
+                f_temp = f_temp.reshape(1, 24 * 24)
+                f_temp = f_temp.tolist()[0]
+                extend_features.append(f_temp)
+
+        print 'test:', i, np.shape(extend_features)
+
+    matrix_io.save(extend_features, 'extend_test_features.pkl')
+    print 'test datas count:', len(old_test_features), '-> extend test datas:', len(extend_features)
+
+    return extend_features
+
+
+def load_extend_training_datas():
+    extend_features_dict = matrix_io.load('extend_train_features.pkl', float)
+    extend_labels_dict = matrix_io.load('extend_train_labels.pkl', float)
+
+    extend_features = extend_features_dict['M']
+    extend_labels = extend_labels_dict['M']
+
+    features_mat = np.mat(extend_features) / 255.0
+    labels_mat = np.zeros([len(extend_labels), 10])
+    for i in xrange(len(extend_labels)):
+        labels_mat[i, extend_labels[i]] = 1
+    return features_mat, labels_mat
+
+
+def load_extend_test_datas():
+    extend_features_dict = matrix_io.load('extend_test_features.pkl', float)
+    extend_features = extend_features_dict['M']
+    features_mat = np.mat(extend_features) / 255.0
     return features_mat
 
 
@@ -215,10 +243,12 @@ def generate_batch(features, labels, batch_size):
 
 
 if __name__ == '__main__':
+    features, labels = extend_training_datas()
     print 'load extended training data...'
-    features, labels = load_extend_training_datas('training_extend.csv')
+    features, labels = load_extend_training_datas()
     print 'load extended training data...Done!'
 
+    print 'extended training features:', np.shape(features), 'extended training labels:', np.shape(labels)
     # training params
     BATCH_SIZE = 200
     TRAIN_SPLIT = 0.85  # training/validation split
