@@ -153,19 +153,6 @@ class DigitsModel(object):
         print 'conv2layer: ', self.sess.run(tf.shape(conv2layer))
         print 'pool2layer: ', self.sess.run(tf.shape(pool2layer))
 
-    def saveModel(self, model_path):
-        """
-        保存最佳模型
-        :return:
-        """
-        self.saver.save(self.sess, save_path=model_path)
-
-    def restoreModel(self, model_path):
-        """
-        保存最佳模型
-        :return:
-        """
-        self.saver.restore(self.sess, save_path=model_path)
 
 def load_extend_training_datas(filename):
     train = pandas.read_csv(filename)
@@ -179,9 +166,10 @@ def load_extend_training_datas(filename):
 
     return features, labels
 
+
 def extend_training_datas():
     """
-    load training data, use one-hot encoding
+    extend training datas, expand twice. 42000 -> 84000
     """
     features, labels = lsd.load_train_data('../../dataset/train.csv')
 
@@ -202,10 +190,9 @@ def extend_training_datas():
                 extend_features.append(f_temp)
                 extend_labels.append(label)
 
-        print 'train:',i , np.shape(extend_features), "-", np.shape(extend_labels)
+        print 'train:', i, np.shape(extend_features), "-", np.shape(extend_labels)
 
-
-    df = pandas.DataFrame({'label':extend_labels, 'images':extend_features})
+    df = pandas.DataFrame({'label': extend_labels, 'images': extend_features})
     df.to_csv('training_extend.csv', sep=',', index=True, columns=["label", "images"])
     return extend_features, extend_labels
 
@@ -227,4 +214,61 @@ def generate_batch(features, labels, batch_size):
     return batch_features, batch_labels
 
 
-extend_training_datas()
+if __name__ == '__main__':
+    print 'load extended training data...'
+    features, labels = load_extend_training_datas('training_extend.csv')
+    print 'load extended training data...Done!'
+
+    # training params
+    BATCH_SIZE = 200
+    TRAIN_SPLIT = 0.85  # training/validation split
+    TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / BATCH_SIZE) * 100
+    print 'training epochs: ', TRAINING_STEPS
+    # split data into training and validation sets
+    train_samples = int(len(features) * TRAIN_SPLIT)
+    train_features = features[:train_samples]
+    train_labels = labels[:train_samples]
+    validation_features = features[train_samples:]
+    validation_labels = labels[train_samples:]
+
+    model = DigitsModel()
+    model.init()
+
+    accuracy_history = []
+
+    # 测试时输出各层的结构信息
+    model.get_layer(train_features[:1])
+
+    for epoch in xrange(TRAINING_STEPS):
+
+        if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
+            accuracy = model.get_accuracy(features=validation_features, labels=validation_labels)
+            accuracy_history.append(accuracy)
+            print 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
+
+        batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
+        model.train_step(batch_features, batch_labels)
+
+    # plot validation accuracy, and adjust params
+    fig = plt.figure()
+    plt.ylim(bottom=0, top=1)
+    plt.xlim(0, len(accuracy_history))
+    plt.plot(accuracy_history)
+    fig.savefig('accuracy_history.png', dpi=75)
+
+    # delete some data to save memorry
+    del features
+    del labels
+    del accuracy_history
+
+    print 'predict test datas...'
+    # test data
+    test_features = load_test_datas()
+    test_batch_size = 100
+    test_labels = np.array([], dtype=np.int32)
+    for i in range(len(test_features) / test_batch_size):
+        labels = model.clarify(test_features[test_batch_size * i: test_batch_size * (i + 1)])
+        test_labels = np.append(test_labels, labels)
+
+    df = pandas.DataFrame({'ImageId': range(1, len(test_labels) + 1, 1), 'Label': test_labels})
+    df.to_csv('tf_advance_cnn_test_labels.csv', sep=',', index=False, columns=["Label", "ImageId"])
