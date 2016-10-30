@@ -11,9 +11,9 @@ conv/conv/pool/relu/dropout/    conv/conv/pool/relu/dropout/  fc/fc/fc/dropout/ 
 import pandas
 import tensorflow as tf
 import numpy as np
-from dataset import load_save_datas as lsd
 import matplotlib as mpl
-import matrix_io
+import extend_data
+from scipy import stats
 
 mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -154,87 +154,6 @@ class DigitsModel(object):
         print 'pool2layer: ', self.sess.run(tf.shape(pool2layer))
 
 
-def extend_training_datas():
-    """
-    extend training datas, expand fourth. 42000 -> 168000
-    """
-    old_features, old_labels = lsd.load_train_data('../../dataset/train.csv')
-
-    # extend the training datas
-    extend_features = []
-    extend_labels = []
-    print 'extend training datas, expand fourth. 42000 -> 84000'
-    for i in xrange(len(old_features)):
-        feature = old_features[i]
-        label = old_labels[i]
-        feature = np.mat(feature)
-        feature = feature.reshape(28, 28)
-        for m in range(0, 5, 4):
-            for n in range(0, 5, 4):
-                f_temp = feature[n:28 - 4 + n, m:28 - 4 + m]
-                f_temp = f_temp.reshape(1, 24 * 24)
-                f_temp = f_temp.tolist()[0]
-                extend_features.append(f_temp)
-                extend_labels.append(label)
-
-        print 'train:', i, np.shape(extend_features), "-", np.shape(extend_labels)
-
-    matrix_io.save(extend_features, 'extend_train_features.pkl')
-    matrix_io.save(extend_labels, 'extend_train_labels.pkl')
-    print 'training datas count:', len(old_features), '-> extend training datas:', len(extend_features)
-
-    return extend_features, extend_labels
-
-
-def extend_test_datas():
-    """
-    extend test datas, expand fourth. 28000 -> 112000
-    """
-    old_test_features = lsd.load_test_data('../../dataset/test.csv')
-
-    # extend the test datas
-    extend_features = []
-    print 'extend test datas, expand fourth. 28000 -> 112000'
-    for i in xrange(len(old_test_features)):
-        feature = old_test_features[i]
-        feature = np.mat(feature)
-        feature = feature.reshape(28, 28)
-        for m in range(0, 5, 4):
-            for n in range(0, 5, 4):
-                f_temp = feature[n:28 - 4 + n, m:28 - 4 + m]
-                f_temp = f_temp.reshape(1, 24 * 24)
-                f_temp = f_temp.tolist()[0]
-                extend_features.append(f_temp)
-
-        print 'test:', i, np.shape(extend_features)
-
-    matrix_io.save(extend_features, 'extend_test_features.pkl')
-    print 'test datas count:', len(old_test_features), '-> extend test datas:', len(extend_features)
-
-    return extend_features
-
-
-def load_extend_training_datas():
-    extend_features_dict = matrix_io.load('extend_train_features.pkl', float)
-    extend_labels_dict = matrix_io.load('extend_train_labels.pkl', float)
-
-    extend_features = extend_features_dict['M']
-    extend_labels = extend_labels_dict['M']
-
-    features_mat = np.mat(extend_features) / 255.0
-    labels_mat = np.zeros([len(extend_labels), 10])
-    for i in xrange(len(extend_labels)):
-        labels_mat[i, extend_labels[i]] = 1
-    return features_mat, labels_mat
-
-
-def load_extend_test_datas():
-    extend_features_dict = matrix_io.load('extend_test_features.pkl', float)
-    extend_features = extend_features_dict['M']
-    features_mat = np.mat(extend_features) / 255.0
-    return features_mat
-
-
 def generate_batch(features, labels, batch_size):
     batch_indexes = np.random.random_integers(0, len(features) - 1, batch_size)
     batch_features = features[batch_indexes]
@@ -243,9 +162,9 @@ def generate_batch(features, labels, batch_size):
 
 
 if __name__ == '__main__':
-    features, labels = extend_training_datas()
+
     print 'load extended training data...'
-    features, labels = load_extend_training_datas()
+    features, labels = extend_data.load_extend_training_datas()
     print 'load extended training data...Done!'
 
     print 'extended training features:', np.shape(features), 'extended training labels:', np.shape(labels)
@@ -293,12 +212,21 @@ if __name__ == '__main__':
 
     print 'predict test datas...'
     # test data
-    test_features = load_test_datas()
+    test_features = extend_data.load_extend_test_datas()
     test_batch_size = 100
-    test_labels = np.array([], dtype=np.int32)
+    extend_test_labels = np.array([], dtype=np.int32)
     for i in range(len(test_features) / test_batch_size):
         labels = model.clarify(test_features[test_batch_size * i: test_batch_size * (i + 1)])
-        test_labels = np.append(test_labels, labels)
+        extend_test_labels = np.append(extend_test_labels, labels)
 
-    df = pandas.DataFrame({'ImageId': range(1, len(test_labels) + 1, 1), 'Label': test_labels})
+    # vote for four times predict!
+    vote_labels = []
+    for i in range(0, 4):
+        vote_labels.append(extend_test_labels[i * 28000: (i+1) * 28000].tolist())
+    print 'vote_labels: ', np.shape(vote_labels)
+
+    result_mode = stats.mode(vote_labels, axis=0)
+    predict_labels = result_mode[0][0]
+
+    df = pandas.DataFrame({'ImageId': range(1, len(predict_labels) + 1, 1), 'Label': predict_labels})
     df.to_csv('tf_advance_cnn_test_labels.csv', sep=',', index=False, columns=["Label", "ImageId"])
