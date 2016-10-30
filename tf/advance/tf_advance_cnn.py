@@ -219,14 +219,19 @@ if __name__ == '__main__':
         labels = model.clarify(test_features[test_batch_size * i: test_batch_size * (i + 1)])
         extend_test_labels = np.append(extend_test_labels, labels)
 
+    print 'extend_test_labels', extend_test_labels
     # vote for four times predict!
-    vote_labels = []
-    for i in range(0, 4):
-        vote_labels.append(extend_test_labels[i * 28000: (i+1) * 28000].tolist())
-    print 'vote_labels: ', np.shape(vote_labels)
+    predict_labels = []
+    for i in range(0, len(extend_test_labels) / 4):
+        vote_labels = []
+        for j in range(4):
+            vote_labels.append(extend_test_labels[i * 4 + j])
+        result_mode = stats.mode(vote_labels, axis=0)
+        print 'result_mode[0][0]:', result_mode[0][0]
+        predict_label = result_mode[0][0]
+        predict_labels.append(predict_label)
 
-    result_mode = stats.mode(vote_labels, axis=0)
-    predict_labels = result_mode[0][0]
+    print predict_labels
 
     df = pandas.DataFrame({'ImageId': range(1, len(predict_labels) + 1, 1), 'Label': predict_labels})
-    df.to_csv('tf_advance_cnn_test_labels.csv', sep=',', index=False, columns=["Label", "ImageId"])
+    df.to_csv('tf_advance_cnn_test_labels.csv', sep=',', index=False, columns=["ImageId", "Label"])
