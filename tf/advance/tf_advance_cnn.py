@@ -14,7 +14,6 @@ import numpy as np
 import matplotlib as mpl
 import extend_data
 from scipy import stats
-import math
 
 mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -203,9 +202,10 @@ if __name__ == '__main__':
             accuracy_history.append(accuracy)
             print 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
 
-            # update learning_rate: alpha = [1 - tanh(temp_accuracy - accuracy)] * alpha
-            learning_rate *= (1 - math.tanh(temp_accuracy - accuracy))
-            temp_accuracy = accuracy
+            # update learning_rate
+            if accuracy < temp_accuracy:
+                learning_rate = 0.9 * learning_rate - 1e-6
+                temp_accuracy = accuracy
 
         batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
         model.train_step(batch_features, batch_labels, learning_rate)
