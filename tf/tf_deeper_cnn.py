@@ -3,7 +3,7 @@
 
 """
 tensorflow deeper convolutional neural network
-conv/pool/relu/conv/pool/relu/fc/readout -> conv/conv/pool/relu/conv/conv/pool/relu/fc/readout
+conv/pool/relu/conv/pool/relu/fc/readout -> conv/conv/pool/relu/conv/conv/pool/relu/fc/fc/fc/dropout/readout
 
 @author: MarkLiu
 @time  : 16-10-24 上午11:20
@@ -69,15 +69,23 @@ class DigitsModel(object):
         self.W_fc1 = self.create_weight_variable([7 * 7 * 64, 1024], 'W_fc1')
         self.b_fc1 = self.create_bias_variable([1024], 'b_fc1')
         self.pool2_flat = tf.reshape(self.pool2, [-1, 7 * 7 * 64])
-        self.full_con = tf.nn.relu(tf.matmul(self.pool2_flat, self.W_fc1) + self.b_fc1)
+        self.full_con_1 = tf.nn.relu(tf.matmul(self.pool2_flat, self.W_fc1) + self.b_fc1)
+
+        self.W_fc2 = self.create_weight_variable([1024, 1024], 'W_fc2')
+        self.b_fc2 = self.create_bias_variable([1024], 'b_fc2')
+        self.full_con_2 = tf.nn.relu(tf.matmul(self.full_con_1, self.W_fc2) + self.b_fc2)
+
+        self.W_fc3 = self.create_weight_variable([1024, 256], 'W_fc3')
+        self.b_fc3 = self.create_bias_variable([256], 'b_fc3')
+        self.full_con_3 = tf.nn.relu(tf.matmul(self.full_con_2, self.W_fc3) + self.b_fc3)
 
         # dropout layer
         self.keep_prob = tf.placeholder(tf.float32)  # how many features to keep
-        self.dropout = tf.nn.dropout(self.full_con, self.keep_prob)
+        self.dropout = tf.nn.dropout(self.full_con_3, self.keep_prob)
 
         # readout layer
         # 1024 features from _fc+_dropout -> 10 outputs
-        self.W_readout = self.create_weight_variable([1024, 10], 'W_readout')
+        self.W_readout = self.create_weight_variable([256, 10], 'W_readout')
         self.b_read_out = self.create_bias_variable([10], 'b_read_out')
         self.digits = tf.matmul(self.dropout, self.W_readout) + self.b_read_out
         self.read_out = tf.nn.softmax(self.digits)
