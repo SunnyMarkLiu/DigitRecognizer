@@ -50,7 +50,7 @@ class DigitsModel(object):
         # dropout layer: keep probability
         self.keep_prob = tf.placeholder(tf.float32)  # how many features to keep
 
-        # layer1: conv + conv + pool
+        # layer1: conv + conv + pool + dropout
         self.W_conv1 = self.create_weight_variable([3, 3, 1, 32], 'W_conv1')
         self.b_conv1 = self.create_bias_variable([32], 'b_conv1')
         self.conv1 = tf.nn.relu(self.create_conv2d(self.x_image, self.W_conv1) + self.b_conv1)
@@ -61,7 +61,7 @@ class DigitsModel(object):
         # add dropout layer in hidden layer1
         self.dropout1 = tf.nn.dropout(self.pool1, self.keep_prob)
 
-        # layer2: conv + conv + pool
+        # layer2: conv + conv + pool + dropout
         self.W_conv2 = self.create_weight_variable([3, 3, 32, 64], 'W_conv2')
         self.b_conv2 = self.create_bias_variable([64], 'b_conv2')
         self.conv2 = tf.nn.relu(self.create_conv2d(self.dropout1, self.W_conv2) + self.b_conv2)
@@ -72,13 +72,13 @@ class DigitsModel(object):
         # add dropout layer in hidden layer2
         self.dropout2 = tf.nn.dropout(self.pool2, self.keep_prob)
 
-        # fully-connected layer
-        self.W_fc1 = self.create_weight_variable([6 * 6 * 64, 1024], 'W_fc1')
-        self.b_fc1 = self.create_bias_variable([1024], 'b_fc1')
+        # fully-connected layer + dropout
+        self.W_fc1 = self.create_weight_variable([6 * 6 * 64, 256], 'W_fc1')
+        self.b_fc1 = self.create_bias_variable([256], 'b_fc1')
         self.pool2_flat = tf.reshape(self.dropout2, [-1, 6 * 6 * 64])
         self.full_con_1 = tf.nn.relu(tf.matmul(self.pool2_flat, self.W_fc1) + self.b_fc1)
 
-        self.W_fc2 = self.create_weight_variable([1024, 1024], 'W_fc2')
+        self.W_fc2 = self.create_weight_variable([256, 1024], 'W_fc2')
         self.b_fc2 = self.create_bias_variable([1024], 'b_fc2')
         self.full_con_2 = tf.nn.relu(tf.matmul(self.full_con_1, self.W_fc2) + self.b_fc2)
 
