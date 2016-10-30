@@ -14,6 +14,7 @@ import numpy as np
 import matplotlib as mpl
 import extend_data
 from scipy import stats
+import math
 
 mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -49,6 +50,9 @@ class DigitsModel(object):
 
         # dropout layer: keep probability
         self.keep_prob = tf.placeholder(tf.float32)  # how many features to keep
+
+        # learning_rate placeholder
+        self.learning_rate = tf.placeholder(tf.float32, name='learning_rate')
 
         # layer1: conv + conv + pool + dropout
         self.W_conv1 = self.create_weight_variable([3, 3, 1, 32], 'W_conv1')
@@ -103,7 +107,7 @@ class DigitsModel(object):
         self.loss_function = tf.nn.softmax_cross_entropy_with_logits(self.read_out, self.y_correct)
 
         # training op
-        self.training_op = tf.train.AdamOptimizer(1e-4).minimize(self.loss_function)
+        self.training_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss_function)
 
         # match predicted values against the correct ones, True or False
         self.predict_matches = tf.equal(tf.argmax(self.read_out, 1), tf.argmax(self.y_correct, 1))
@@ -124,11 +128,12 @@ class DigitsModel(object):
         self.sess = tf.Session()
         self.sess.run(init_op)
 
-    def train_step(self, features_batch, labels_batch):
+    def train_step(self, features_batch, labels_batch, learning_rate):
         feed_dict = {
             self.x: features_batch,
             self.y_correct: labels_batch,
-            self.keep_prob: 0.5
+            self.keep_prob: 0.5,
+            self.learning_rate: learning_rate
         }
         self.sess.run(self.training_op, feed_dict=feed_dict)
 
@@ -188,6 +193,9 @@ if __name__ == '__main__':
     # 测试时输出各层的结构信息
     model.get_layer(train_features[:1])
 
+    learning_rate = 1e-3
+
+    temp_accuracy = 0
     for epoch in xrange(TRAINING_STEPS):
 
         if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
@@ -195,8 +203,12 @@ if __name__ == '__main__':
             accuracy_history.append(accuracy)
             print 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
 
+            # update learning_rate: alpha = [1 - tanh(temp_accuracy - accuracy)] * alpha
+            learning_rate *= (1 - math.tanh(temp_accuracy - accuracy))
+            temp_accuracy = accuracy
+
         batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
-        model.train_step(batch_features, batch_labels)
+        model.train_step(batch_features, batch_labels, learning_rate)
 
     # plot validation accuracy, and adjust params
     fig = plt.figure()
