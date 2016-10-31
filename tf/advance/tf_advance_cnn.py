@@ -62,23 +62,23 @@ class DigitsModel(object):
         self.conv1_2 = tf.nn.relu(self.create_conv2d(self.conv1, self.W_conv1_2) + self.b_conv1_2)
         self.pool1 = self.create_max_pool_2x2(self.conv1_2)
         # add dropout layer in hidden layer1
-        self.dropout1 = tf.nn.dropout(self.pool1, self.keep_prob)
+        #self.dropout1 = tf.nn.dropout(self.pool1, self.keep_prob)
 
         # layer2: conv + conv + pool + dropout
         self.W_conv2 = self.create_weight_variable([3, 3, 32, 64], 'W_conv2')
         self.b_conv2 = self.create_bias_variable([64], 'b_conv2')
-        self.conv2 = tf.nn.relu(self.create_conv2d(self.dropout1, self.W_conv2) + self.b_conv2)
+        self.conv2 = tf.nn.relu(self.create_conv2d(self.pool1, self.W_conv2) + self.b_conv2)
         self.W_conv2_2 = self.create_weight_variable([3, 3, 64, 64], 'W_conv2_2')
         self.b_conv2_2 = self.create_bias_variable([64], 'b_conv2_2')
         self.conv2_2 = tf.nn.relu(self.create_conv2d(self.conv2, self.W_conv2_2) + self.b_conv2_2)
         self.pool2 = self.create_max_pool_2x2(self.conv2)
         # add dropout layer in hidden layer2
-        self.dropout2 = tf.nn.dropout(self.pool2, self.keep_prob)
+        #self.dropout2 = tf.nn.dropout(self.pool2, self.keep_prob)
 
         # fully-connected layer + dropout
         self.W_fc1 = self.create_weight_variable([6 * 6 * 64, 256], 'W_fc1')
         self.b_fc1 = self.create_bias_variable([256], 'b_fc1')
-        self.pool2_flat = tf.reshape(self.dropout2, [-1, 6 * 6 * 64])
+        self.pool2_flat = tf.reshape(self.pool2, [-1, 6 * 6 * 64])
         self.full_con_1 = tf.nn.relu(tf.matmul(self.pool2_flat, self.W_fc1) + self.b_fc1)
 
         self.W_fc2 = self.create_weight_variable([256, 1024], 'W_fc2')
@@ -131,7 +131,7 @@ class DigitsModel(object):
         feed_dict = {
             self.x: features_batch,
             self.y_correct: labels_batch,
-            self.keep_prob: 0.5,
+            self.keep_prob: 0.25,
             self.learning_rate: learning_rate
         }
         self.sess.run(self.training_op, feed_dict=feed_dict)
@@ -188,8 +188,7 @@ if __name__ == '__main__':
     accuracy_history = []
 
     learning_rate = 1e-3
-
-    temp_accuracy = 0
+    undate_count = 3
     for epoch in xrange(TRAINING_STEPS):
 
         if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
@@ -197,10 +196,9 @@ if __name__ == '__main__':
             accuracy_history.append(accuracy)
             print 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
 
-            # update learning_rate
-            if accuracy < temp_accuracy:
-                learning_rate = 0.9 * learning_rate - 1e-6
-                temp_accuracy = accuracy
+        # update learning rate
+        if epoch == TRAINING_STEPS // undate_count:
+            learning_rate /= 10
 
         batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
         model.train_step(batch_features, batch_labels, learning_rate)
@@ -242,19 +240,18 @@ if __name__ == '__main__':
         labels = model.clarify(test_features[test_batch_size * i: test_batch_size * (i + 1)])
         extend_test_labels = np.append(extend_test_labels, labels)
 
-    print 'extend_test_labels', extend_test_labels
     # vote for four times predict!
+    print 'vote for four times predict...'
     predict_labels = []
     for i in range(0, len(extend_test_labels) / 4):
         vote_labels = []
         for j in range(4):
             vote_labels.append(extend_test_labels[i * 4 + j])
         result_mode = stats.mode(vote_labels, axis=0)
-        print 'result_mode[0][0]:', result_mode[0][0]
         predict_label = result_mode[0][0]
         predict_labels.append(predict_label)
 
-    print predict_labels
-
+    print 'save test predict...'
     df = pandas.DataFrame({'ImageId': range(1, len(predict_labels) + 1, 1), 'Label': predict_labels})
     df.to_csv('tf_advance_cnn_test_labels.csv', sep=',', index=False, columns=["ImageId", "Label"])
+    print 'done!'
