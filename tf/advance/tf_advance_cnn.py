@@ -194,11 +194,19 @@ if __name__ == '__main__':
         if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
             accuracy = model.get_accuracy(features=validation_features, labels=validation_labels)
             accuracy_history.append(accuracy)
-            print 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
+            print 'learning_rate:', learning_rate, 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
 
         # update learning rate
-        if epoch == TRAINING_STEPS // undate_count:
-            learning_rate /= 10
+        if epoch == 2200:
+            learning_rate /= 10 # 1e-4
+        if epoch == 10000:
+            learning_rate -= 2e-5
+        if epoch == 20000:
+            learning_rate -= 2e-5
+        if epoch == 40000:
+            learning_rate -= 2e-5
+        if epoch == 60000:
+            learning_rate -= 2e-5
 
         batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
         model.train_step(batch_features, batch_labels, learning_rate)
@@ -217,7 +225,6 @@ if __name__ == '__main__':
     cnn1_feature_map = cnn1_feature_map.reshape((3, 3, 32))
     for i in range(32):
         weight = cnn1_feature_map[:, :, i]
-        print np.shape(weight)
         cmap = mpl.cm.gray_r
         ax = fig.add_subplot(4, 8, i + 1)
         ax.set_xticks([])
