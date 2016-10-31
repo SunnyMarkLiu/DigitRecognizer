@@ -148,14 +148,12 @@ class DigitsModel(object):
         test_labels = self.sess.run(self.test_op, feed_dict={self.x: features, self.keep_prob: 1.0})
         return test_labels
 
-    def get_layer(self, features):
-        conv1layer, pool1layer, conv2layer, pool2layer = self.sess.run([self.conv1, self.pool1, self.conv2, self.pool2],
-                                                                       feed_dict={self.x: features,
-                                                                                  self.keep_prob: 1.0})
-        print 'conv1layer: ', self.sess.run(tf.shape(conv1layer))
-        print 'pool1layer: ', self.sess.run(tf.shape(pool1layer))
-        print 'conv2layer: ', self.sess.run(tf.shape(conv2layer))
-        print 'pool2layer: ', self.sess.run(tf.shape(pool2layer))
+    def get_layer_learned_weight(self):
+        """
+        get the weight the units learned, and then plot them
+        :return:
+        """
+        return self.sess.run([self.W_conv1, self.W_conv1_2, self.W_conv2, self.W_conv2_2])
 
 
 def generate_batch(features, labels, batch_size):
@@ -189,9 +187,6 @@ if __name__ == '__main__':
 
     accuracy_history = []
 
-    # 测试时输出各层的结构信息
-    model.get_layer(train_features[:1])
-
     learning_rate = 1e-3
 
     temp_accuracy = 0
@@ -216,6 +211,22 @@ if __name__ == '__main__':
     plt.xlim(0, len(accuracy_history))
     plt.plot(accuracy_history)
     fig.savefig('accuracy_history.png', dpi=75)
+
+    # check what the convolution layer has learned
+    cnn_learned_weight = model.get_layer_learned_weight()
+    fig = plt.figure()
+    cnn1_feature_map = cnn_learned_weight[0]
+    cnn1_feature_map = cnn1_feature_map.reshape((3, 3, 32))
+    for i in range(32):
+        weight = cnn1_feature_map[:, :, i]
+        print np.shape(weight)
+        cmap = mpl.cm.gray_r
+        ax = fig.add_subplot(4, 8, i + 1)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        plt.subplots_adjust(wspace=0, hspace=-0.7)
+        ax.imshow(weight, cmap=cmap)
+    fig.savefig('cnn_weight.png', dpi=75)
 
     # delete some data to save memorry
     del features
