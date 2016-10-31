@@ -188,7 +188,6 @@ if __name__ == '__main__':
     accuracy_history = []
 
     learning_rate = 1e-3
-    undate_count = 3
     for epoch in xrange(TRAINING_STEPS):
 
         if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
@@ -197,16 +196,12 @@ if __name__ == '__main__':
             print 'learning_rate:', learning_rate, 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
 
         # update learning rate
-        if epoch == 2200:
-            learning_rate /= 10 # 1e-4
-        if epoch == 10000:
-            learning_rate -= 2e-5
+        if epoch == 5000:
+            learning_rate -= 2e-4
         if epoch == 20000:
-            learning_rate -= 2e-5
+            learning_rate /= 10
         if epoch == 40000:
-            learning_rate -= 2e-5
-        if epoch == 60000:
-            learning_rate -= 2e-5
+            learning_rate /= 10
 
         batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
         model.train_step(batch_features, batch_labels, learning_rate)
