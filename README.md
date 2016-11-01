@@ -15,8 +15,8 @@ kaggle competition - Digit Recognizer(https://www.kaggle.com/c/digit-recognizer)
 - conv2_2    : 64 kernels of size = 3x3x64, strides = 1, padding = 'SAME'
 - max-pooling: neighborhoods = 2 x 2, strides = 1
 - fc1        : 6x6x64 x 256
-- fc1        : 256 x 1024
-- fc1        : 1024 x 256
+- fc2        : 256 x 1024
+- fc3        : 1024 x 256
 - readout    : 256 x 10
 
 # Result
