@@ -25,7 +25,7 @@ class DigitsModel(object):
     """
 
     def create_weight_variable(self, shape, name):
-        initial = tf.truncated_normal(shape, stddev=0.1)
+        initial = tf.truncated_normal(shape, stddev=0.01)
         return tf.Variable(initial, name=name)
 
     def create_bias_variable(self, shape, name):
@@ -62,18 +62,18 @@ class DigitsModel(object):
         self.conv1_2 = tf.nn.relu(self.create_conv2d(self.conv1, self.W_conv1_2) + self.b_conv1_2)
         self.pool1 = self.create_max_pool_2x2(self.conv1_2)
         # add dropout layer in hidden layer1
-        #self.dropout1 = tf.nn.dropout(self.pool1, self.keep_prob)
+        self.dropout1 = tf.nn.dropout(self.pool1, self.keep_prob)
 
         # layer2: conv + conv + pool + dropout
         self.W_conv2 = self.create_weight_variable([3, 3, 32, 64], 'W_conv2')
         self.b_conv2 = self.create_bias_variable([64], 'b_conv2')
-        self.conv2 = tf.nn.relu(self.create_conv2d(self.pool1, self.W_conv2) + self.b_conv2)
+        self.conv2 = tf.nn.relu(self.create_conv2d(self.dropout1, self.W_conv2) + self.b_conv2)
         self.W_conv2_2 = self.create_weight_variable([3, 3, 64, 64], 'W_conv2_2')
         self.b_conv2_2 = self.create_bias_variable([64], 'b_conv2_2')
         self.conv2_2 = tf.nn.relu(self.create_conv2d(self.conv2, self.W_conv2_2) + self.b_conv2_2)
         self.pool2 = self.create_max_pool_2x2(self.conv2)
         # add dropout layer in hidden layer2
-        #self.dropout2 = tf.nn.dropout(self.pool2, self.keep_prob)
+        self.dropout2 = tf.nn.dropout(self.pool2, self.keep_prob)
 
         # fully-connected layer + dropout
         self.W_fc1 = self.create_weight_variable([6 * 6 * 64, 256], 'W_fc1')
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     # training params
     BATCH_SIZE = 200
     TRAIN_SPLIT = 0.85  # training/validation split
-    TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / BATCH_SIZE) * 100
+    TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / BATCH_SIZE) * 200
     print 'training epochs: ', TRAINING_STEPS
     # split data into training and validation sets
     train_samples = int(len(features) * TRAIN_SPLIT)
@@ -187,7 +187,7 @@ if __name__ == '__main__':
 
     accuracy_history = []
 
-    learning_rate = 1e-3
+    learning_rate = 1e-4
     for epoch in xrange(TRAINING_STEPS):
 
         if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
@@ -195,14 +195,10 @@ if __name__ == '__main__':
             accuracy_history.append(accuracy)
             print 'learning_rate:', learning_rate, 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
 
-        # update learning rate
-        if epoch == 5000:
-            learning_rate -= 2e-4
-        if epoch == 20000:
+        if epoch == 70000:
             learning_rate /= 10
-        if epoch == 40000:
+        if epoch == 100000:
             learning_rate /= 10
-
         batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
         model.train_step(batch_features, batch_labels, learning_rate)
 
