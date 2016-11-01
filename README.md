@@ -21,8 +21,8 @@ input + conv/conv/pool/relu/dropout/ + conv/conv/pool/relu/dropout/ + fc/fc/fc/d
 
 # Result
 Finally we get 0.99271 test accuracy.
-![result](https://github.com/SunnyMarkLiu/DigitRecognizer/tree/master/tf/result.png)
+![result](https://github.com/SunnyMarkLiu/DigitRecognizer/blob/master/tf/advance/result.png)
 
 # Moreover
 How to get 1.0 test accuracy?
-![result](https://github.com/SunnyMarkLiu/DigitRecognizer/tree/master/tf/result1.png)
+![result](https://github.com/SunnyMarkLiu/DigitRecognizer/blob/master/tf/advance/result1.png)
