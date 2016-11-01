@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     accuracy_history = []
 
-    learning_rate = 1e-2
+    learning_rate = 1e-3
     for epoch in xrange(TRAINING_STEPS):
 
         if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
@@ -211,8 +211,6 @@ if __name__ == '__main__':
             accuracy_history.append(accuracy)
             print 'learning_rate:', learning_rate, 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
 
-        if epoch == 2000:
-            learning_rate /= 10
         if epoch == 10000:
             learning_rate /= 10
         if epoch == 70000:
