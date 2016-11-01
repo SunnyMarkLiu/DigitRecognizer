@@ -21,11 +21,11 @@ import matplotlib.pyplot as plt
 
 class DigitsModel(object):
     """
-    手写数字识别的 CNN 模型
+    Digit Recognizer CNN model
     """
 
     def create_weight_variable(self, shape, name):
-        initial = tf.truncated_normal(shape, stddev=0.01)
+        initial = tf.truncated_normal(shape, stddev=0.1)
         return tf.Variable(initial, name=name)
 
     def create_bias_variable(self, shape, name):
@@ -37,6 +37,10 @@ class DigitsModel(object):
 
     def create_max_pool_2x2(self, x):
         return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+    def local_response_normalization(self, inputs):
+        normal_out = tf.div(inputs, tf.sqrt(tf.reduce_sum(tf.square(inputs))))
+        return normal_out
 
     def create_model(self):
         # input features
@@ -56,38 +60,50 @@ class DigitsModel(object):
         # layer1: conv + conv + pool + dropout
         self.W_conv1 = self.create_weight_variable([3, 3, 1, 32], 'W_conv1')
         self.b_conv1 = self.create_bias_variable([32], 'b_conv1')
-        self.conv1 = tf.nn.relu(self.create_conv2d(self.x_image, self.W_conv1) + self.b_conv1)
+        conv1_out = self.create_conv2d(self.x_image, self.W_conv1) + self.b_conv1
+        self.conv1 = tf.nn.relu(self.local_response_normalization(conv1_out))
+
         self.W_conv1_2 = self.create_weight_variable([3, 3, 32, 32], 'W_conv1_2')
         self.b_conv1_2 = self.create_bias_variable([32], 'b_conv1_2')
-        self.conv1_2 = tf.nn.relu(self.create_conv2d(self.conv1, self.W_conv1_2) + self.b_conv1_2)
+        conv1_2_out = self.create_conv2d(self.conv1, self.W_conv1_2) + self.b_conv1_2
+        self.conv1_2 = tf.nn.relu(self.local_response_normalization(conv1_2_out))
+
         self.pool1 = self.create_max_pool_2x2(self.conv1_2)
         # add dropout layer in hidden layer1
         self.dropout1 = tf.nn.dropout(self.pool1, self.keep_prob)
 
+
         # layer2: conv + conv + pool + dropout
         self.W_conv2 = self.create_weight_variable([3, 3, 32, 64], 'W_conv2')
         self.b_conv2 = self.create_bias_variable([64], 'b_conv2')
-        self.conv2 = tf.nn.relu(self.create_conv2d(self.dropout1, self.W_conv2) + self.b_conv2)
+        conv2_1_out = self.create_conv2d(self.dropout1, self.W_conv2) + self.b_conv2
+        self.conv2 = tf.nn.relu(self.local_response_normalization(conv2_1_out))
+
         self.W_conv2_2 = self.create_weight_variable([3, 3, 64, 64], 'W_conv2_2')
         self.b_conv2_2 = self.create_bias_variable([64], 'b_conv2_2')
-        self.conv2_2 = tf.nn.relu(self.create_conv2d(self.conv2, self.W_conv2_2) + self.b_conv2_2)
-        self.pool2 = self.create_max_pool_2x2(self.conv2)
+        conv2_2_out = self.create_conv2d(self.conv2, self.W_conv2_2) + self.b_conv2_2
+        self.conv2_2 = tf.nn.relu(self.local_response_normalization(conv2_2_out))
+
+        self.pool2 = self.create_max_pool_2x2(self.conv2_2)
         # add dropout layer in hidden layer2
         self.dropout2 = tf.nn.dropout(self.pool2, self.keep_prob)
 
         # fully-connected layer + dropout
         self.W_fc1 = self.create_weight_variable([6 * 6 * 64, 256], 'W_fc1')
         self.b_fc1 = self.create_bias_variable([256], 'b_fc1')
-        self.pool2_flat = tf.reshape(self.pool2, [-1, 6 * 6 * 64])
-        self.full_con_1 = tf.nn.relu(tf.matmul(self.pool2_flat, self.W_fc1) + self.b_fc1)
+        self.pool2_flat = tf.reshape(self.dropout2, [-1, 6 * 6 * 64])
+        fc_1_out = tf.matmul(self.pool2_flat, self.W_fc1) + self.b_fc1
+        self.full_con_1 = tf.nn.relu(fc_1_out)
 
         self.W_fc2 = self.create_weight_variable([256, 1024], 'W_fc2')
         self.b_fc2 = self.create_bias_variable([1024], 'b_fc2')
-        self.full_con_2 = tf.nn.relu(tf.matmul(self.full_con_1, self.W_fc2) + self.b_fc2)
+        fc_2_out = tf.matmul(self.full_con_1, self.W_fc2) + self.b_fc2
+        self.full_con_2 = tf.nn.relu(fc_2_out)
 
         self.W_fc3 = self.create_weight_variable([1024, 256], 'W_fc3')
         self.b_fc3 = self.create_bias_variable([256], 'b_fc3')
-        self.full_con_3 = tf.nn.relu(tf.matmul(self.full_con_2, self.W_fc3) + self.b_fc3)
+        fc_3_out = tf.matmul(self.full_con_2, self.W_fc3) + self.b_fc3
+        self.full_con_3 = tf.nn.relu(fc_3_out)
         self.dropout = tf.nn.dropout(self.full_con_3, self.keep_prob)
 
         # readout layer
@@ -171,7 +187,7 @@ if __name__ == '__main__':
 
     print 'extended training features:', np.shape(features), 'extended training labels:', np.shape(labels)
     # training params
-    BATCH_SIZE = 200
+    BATCH_SIZE = 180
     TRAIN_SPLIT = 0.85  # training/validation split
     TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / BATCH_SIZE) * 200
     print 'training epochs: ', TRAINING_STEPS
@@ -187,7 +203,7 @@ if __name__ == '__main__':
 
     accuracy_history = []
 
-    learning_rate = 1e-4
+    learning_rate = 1e-2
     for epoch in xrange(TRAINING_STEPS):
 
         if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
@@ -195,6 +211,10 @@ if __name__ == '__main__':
             accuracy_history.append(accuracy)
             print 'learning_rate:', learning_rate, 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
 
+        if epoch == 2000:
+            learning_rate /= 10
+        if epoch == 10000:
+            learning_rate /= 10
         if epoch == 70000:
             learning_rate /= 10
         if epoch == 100000:
