@@ -2,10 +2,10 @@
 kaggle competition - Digit Recognizer(https://www.kaggle.com/c/digit-recognizer)
 # Model
 1. extend training datas
-Using translation operation and reshape the training/testing data(28x28) to 24x24, and get four time training/testing datas.
-2. tensorflow deep convolutional neural network.
+<p>Using translation operation and reshape the training/testing data(28x28) to 24x24, and get four time training/testing datas.</p>
 
-input + conv/conv/pool/relu/dropout/ + conv/conv/pool/relu/dropout/ + fc/fc/fc/dropout/ readout
+2. tensorflow deep convolutional neural network.
+<p>input + conv/conv/pool/relu/dropout/ + conv/conv/pool/relu/dropout/ + fc/fc/fc/dropout/ readout</p>
 
 - input: 24 x 24 x 1
 - conv1_1    : 32 kernels of size = 3x3x1, strides = 1, padding = 'SAME'
