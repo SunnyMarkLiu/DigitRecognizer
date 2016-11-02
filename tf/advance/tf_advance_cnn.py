@@ -53,37 +53,33 @@ class DigitsModel(object):
         self.learning_rate = tf.placeholder(tf.float32, name='learning_rate')
 
         # layer1: conv + conv + pool + dropout
-        with tf.name_scope('conv1_1'):
-            self.W_conv1 = self.create_weight_variable([3, 3, 1, 32], 'W_conv1')
-            self.variable_summaries(self.W_conv1, 'conv1_1/W_conv1')
-            self.b_conv1 = self.create_bias_variable([32], 'b_conv1')
-            self.variable_summaries(self.b_conv1, 'conv1_1/b_conv1')
-            self.conv1 = tf.nn.relu(self.create_conv2d(self.x_image, self.W_conv1) + self.b_conv1)
-        with tf.name_scope('conv1_2'):
-            self.W_conv1_2 = self.create_weight_variable([3, 3, 32, 32], 'W_conv1_2')
-            self.variable_summaries(self.W_conv1_2, 'conv1_2/W_conv1_2')
-            self.b_conv1_2 = self.create_bias_variable([32], 'b_conv1_2')
-            self.variable_summaries(self.b_conv1_2, 'conv1_2/b_conv1_2')
-            self.conv1_2 = tf.nn.relu(self.create_conv2d(self.conv1, self.W_conv1_2) + self.b_conv1_2)
+        self.W_conv1 = self.create_weight_variable([3, 3, 1, 32], 'W_conv1')
+        self.variable_summaries(self.W_conv1, 'conv1_1/W_conv1')
+        self.b_conv1 = self.create_bias_variable([32], 'b_conv1')
+        self.variable_summaries(self.b_conv1, 'conv1_1/b_conv1')
+        self.conv1 = tf.nn.relu(self.create_conv2d(self.x_image, self.W_conv1) + self.b_conv1)
+        self.W_conv1_2 = self.create_weight_variable([3, 3, 32, 32], 'W_conv1_2')
+        self.variable_summaries(self.W_conv1_2, 'conv1_2/W_conv1_2')
+        self.b_conv1_2 = self.create_bias_variable([32], 'b_conv1_2')
+        self.variable_summaries(self.b_conv1_2, 'conv1_2/b_conv1_2')
+        self.conv1_2 = tf.nn.relu(self.create_conv2d(self.conv1, self.W_conv1_2) + self.b_conv1_2)
 
         self.pool1 = self.create_max_pool_2x2(self.conv1_2)
         # add dropout layer in hidden layer1
         self.dropout1 = tf.nn.dropout(self.pool1, self.keep_prob)
 
         # layer2: conv + conv + pool + dropout
-        with tf.name_scope('conv2_1'):
-            self.W_conv2 = self.create_weight_variable([3, 3, 32, 64], 'W_conv2')
-            self.variable_summaries(self.W_conv2, 'conv2_1/W_conv2')
-            self.b_conv2 = self.create_bias_variable([64], 'b_conv2')
-            self.variable_summaries(self.b_conv2, 'conv1_2/b_conv2')
-            self.conv2 = tf.nn.relu(self.create_conv2d(self.dropout1, self.W_conv2) + self.b_conv2)
+        self.W_conv2 = self.create_weight_variable([3, 3, 32, 64], 'W_conv2')
+        self.variable_summaries(self.W_conv2, 'conv2_1/W_conv2')
+        self.b_conv2 = self.create_bias_variable([64], 'b_conv2')
+        self.variable_summaries(self.b_conv2, 'conv1_2/b_conv2')
+        self.conv2 = tf.nn.relu(self.create_conv2d(self.dropout1, self.W_conv2) + self.b_conv2)
 
-        with tf.name_scope('conv2_2'):
-            self.W_conv2_2 = self.create_weight_variable([3, 3, 64, 64], 'W_conv2_2')
-            self.variable_summaries(self.W_conv2_2, 'conv2_2/W_conv2_2')
-            self.b_conv2_2 = self.create_bias_variable([64], 'b_conv2_2')
-            self.variable_summaries(self.b_conv2_2, 'conv2_2/b_conv2_2')
-            self.conv2_2 = tf.nn.relu(self.create_conv2d(self.conv2, self.W_conv2_2) + self.b_conv2_2)
+        self.W_conv2_2 = self.create_weight_variable([3, 3, 64, 64], 'W_conv2_2')
+        self.variable_summaries(self.W_conv2_2, 'conv2_2/W_conv2_2')
+        self.b_conv2_2 = self.create_bias_variable([64], 'b_conv2_2')
+        self.variable_summaries(self.b_conv2_2, 'conv2_2/b_conv2_2')
+        self.conv2_2 = tf.nn.relu(self.create_conv2d(self.conv2, self.W_conv2_2) + self.b_conv2_2)
 
         self.pool2 = self.create_max_pool_2x2(self.conv2)
         # add dropout layer in hidden layer2
@@ -144,7 +140,7 @@ class DigitsModel(object):
         # Merge all the summaries and write them out to /tmp/mnist_logs (by default)
         self.merged = tf.merge_all_summaries()
         self.train_writer = tf.train.SummaryWriter('summaries_log' + '/train',
-                                              self.sess.graph)
+                                                   self.sess.graph)
         self.validate_writer = tf.train.SummaryWriter('summaries_log' + '/validate')
         self.sess.run(init_op)
 
@@ -237,6 +233,8 @@ if __name__ == '__main__':
             model.get_validate_writer().add_summary(summary, epoch)
             print 'learning_rate:', learning_rate, 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
 
+        if epoch == 20000:
+            learning_rate /= 5
         if epoch == 70000:
             learning_rate /= 10
         if epoch == 100000:
