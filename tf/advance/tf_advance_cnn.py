@@ -4,7 +4,6 @@
 """
 tensorflow advance deeper convolutional neural network
 conv/conv/pool/relu/dropout/    conv/conv/pool/relu/dropout/  fc/fc/fc/dropout/ readout
-
 @author: MarkLiu
 @time  : 16-10-30 上午10:32
 """
@@ -21,11 +20,11 @@ import matplotlib.pyplot as plt
 
 class DigitsModel(object):
     """
-    Digit Recognizer CNN model
+    手写数字识别的 CNN 模型
     """
 
     def create_weight_variable(self, shape, name):
-        initial = tf.truncated_normal(shape, stddev=0.1)
+        initial = tf.truncated_normal(shape, stddev=0.01)
         return tf.Variable(initial, name=name)
 
     def create_bias_variable(self, shape, name):
@@ -37,10 +36,6 @@ class DigitsModel(object):
 
     def create_max_pool_2x2(self, x):
         return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-
-    def local_response_normalization(self, inputs):
-        normal_out = tf.div(inputs, tf.sqrt(tf.reduce_sum(tf.square(inputs))))
-        return normal_out
 
     def create_model(self):
         # input features
@@ -58,52 +53,55 @@ class DigitsModel(object):
         self.learning_rate = tf.placeholder(tf.float32, name='learning_rate')
 
         # layer1: conv + conv + pool + dropout
-        self.W_conv1 = self.create_weight_variable([3, 3, 1, 32], 'W_conv1')
-        self.b_conv1 = self.create_bias_variable([32], 'b_conv1')
-        conv1_out = self.create_conv2d(self.x_image, self.W_conv1) + self.b_conv1
-        self.conv1 = tf.nn.relu(self.local_response_normalization(conv1_out))
-
-        self.W_conv1_2 = self.create_weight_variable([3, 3, 32, 32], 'W_conv1_2')
-        self.b_conv1_2 = self.create_bias_variable([32], 'b_conv1_2')
-        conv1_2_out = self.create_conv2d(self.conv1, self.W_conv1_2) + self.b_conv1_2
-        self.conv1_2 = tf.nn.relu(self.local_response_normalization(conv1_2_out))
+        with tf.name_scope('conv1_1'):
+            self.W_conv1 = self.create_weight_variable([3, 3, 1, 32], 'W_conv1')
+            self.variable_summaries(self.W_conv1, 'conv1_1/W_conv1')
+            self.b_conv1 = self.create_bias_variable([32], 'b_conv1')
+            self.variable_summaries(self.b_conv1, 'conv1_1/b_conv1')
+            self.conv1 = tf.nn.relu(self.create_conv2d(self.x_image, self.W_conv1) + self.b_conv1)
+        with tf.name_scope('conv1_2'):
+            self.W_conv1_2 = self.create_weight_variable([3, 3, 32, 32], 'W_conv1_2')
+            self.variable_summaries(self.W_conv1_2, 'conv1_2/W_conv1_2')
+            self.b_conv1_2 = self.create_bias_variable([32], 'b_conv1_2')
+            self.variable_summaries(self.b_conv1_2, 'conv1_2/b_conv1_2')
+            self.conv1_2 = tf.nn.relu(self.create_conv2d(self.conv1, self.W_conv1_2) + self.b_conv1_2)
 
         self.pool1 = self.create_max_pool_2x2(self.conv1_2)
         # add dropout layer in hidden layer1
         self.dropout1 = tf.nn.dropout(self.pool1, self.keep_prob)
 
-
         # layer2: conv + conv + pool + dropout
-        self.W_conv2 = self.create_weight_variable([3, 3, 32, 64], 'W_conv2')
-        self.b_conv2 = self.create_bias_variable([64], 'b_conv2')
-        conv2_1_out = self.create_conv2d(self.dropout1, self.W_conv2) + self.b_conv2
-        self.conv2 = tf.nn.relu(self.local_response_normalization(conv2_1_out))
+        with tf.name_scope('conv2_1'):
+            self.W_conv2 = self.create_weight_variable([3, 3, 32, 64], 'W_conv2')
+            self.variable_summaries(self.W_conv2, 'conv2_1/W_conv2')
+            self.b_conv2 = self.create_bias_variable([64], 'b_conv2')
+            self.variable_summaries(self.b_conv2, 'conv1_2/b_conv2')
+            self.conv2 = tf.nn.relu(self.create_conv2d(self.dropout1, self.W_conv2) + self.b_conv2)
 
-        self.W_conv2_2 = self.create_weight_variable([3, 3, 64, 64], 'W_conv2_2')
-        self.b_conv2_2 = self.create_bias_variable([64], 'b_conv2_2')
-        conv2_2_out = self.create_conv2d(self.conv2, self.W_conv2_2) + self.b_conv2_2
-        self.conv2_2 = tf.nn.relu(self.local_response_normalization(conv2_2_out))
+        with tf.name_scope('conv2_2'):
+            self.W_conv2_2 = self.create_weight_variable([3, 3, 64, 64], 'W_conv2_2')
+            self.variable_summaries(self.W_conv2_2, 'conv2_2/W_conv2_2')
+            self.b_conv2_2 = self.create_bias_variable([64], 'b_conv2_2')
+            self.variable_summaries(self.b_conv2_2, 'conv2_2/b_conv2_2')
+            self.conv2_2 = tf.nn.relu(self.create_conv2d(self.conv2, self.W_conv2_2) + self.b_conv2_2)
 
-        self.pool2 = self.create_max_pool_2x2(self.conv2_2)
+        self.pool2 = self.create_max_pool_2x2(self.conv2)
         # add dropout layer in hidden layer2
         self.dropout2 = tf.nn.dropout(self.pool2, self.keep_prob)
 
         # fully-connected layer + dropout
         self.W_fc1 = self.create_weight_variable([6 * 6 * 64, 256], 'W_fc1')
         self.b_fc1 = self.create_bias_variable([256], 'b_fc1')
-        self.pool2_flat = tf.reshape(self.dropout2, [-1, 6 * 6 * 64])
-        fc_1_out = tf.matmul(self.pool2_flat, self.W_fc1) + self.b_fc1
-        self.full_con_1 = tf.nn.relu(fc_1_out)
+        self.pool2_flat = tf.reshape(self.pool2, [-1, 6 * 6 * 64])
+        self.full_con_1 = tf.nn.relu(tf.matmul(self.pool2_flat, self.W_fc1) + self.b_fc1)
 
         self.W_fc2 = self.create_weight_variable([256, 1024], 'W_fc2')
         self.b_fc2 = self.create_bias_variable([1024], 'b_fc2')
-        fc_2_out = tf.matmul(self.full_con_1, self.W_fc2) + self.b_fc2
-        self.full_con_2 = tf.nn.relu(fc_2_out)
+        self.full_con_2 = tf.nn.relu(tf.matmul(self.full_con_1, self.W_fc2) + self.b_fc2)
 
         self.W_fc3 = self.create_weight_variable([1024, 256], 'W_fc3')
         self.b_fc3 = self.create_bias_variable([256], 'b_fc3')
-        fc_3_out = tf.matmul(self.full_con_2, self.W_fc3) + self.b_fc3
-        self.full_con_3 = tf.nn.relu(fc_3_out)
+        self.full_con_3 = tf.nn.relu(tf.matmul(self.full_con_2, self.W_fc3) + self.b_fc3)
         self.dropout = tf.nn.dropout(self.full_con_3, self.keep_prob)
 
         # readout layer
@@ -120,6 +118,8 @@ class DigitsModel(object):
         """
         # loss function
         self.loss_function = tf.nn.softmax_cross_entropy_with_logits(self.read_out, self.y_correct)
+        cross_entropy = tf.reduce_mean(self.loss_function)
+        tf.scalar_summary('cross entropy', cross_entropy)
 
         # training op
         self.training_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss_function)
@@ -129,7 +129,7 @@ class DigitsModel(object):
 
         # accuracy metric
         self.accuracy = tf.reduce_mean(tf.cast(self.predict_matches, tf.float32))
-
+        tf.scalar_summary('accuracy', self.accuracy)
         # test op
         self.test_op = tf.argmax(self.read_out, 1)
 
@@ -141,6 +141,11 @@ class DigitsModel(object):
         # 'Saver' op to save and restore all the variables
         self.saver = tf.train.Saver()
         self.sess = tf.Session()
+        # Merge all the summaries and write them out to /tmp/mnist_logs (by default)
+        self.merged = tf.merge_all_summaries()
+        self.train_writer = tf.train.SummaryWriter('summaries_log' + '/train',
+                                              self.sess.graph)
+        self.validate_writer = tf.train.SummaryWriter('summaries_log' + '/validate')
         self.sess.run(init_op)
 
     def train_step(self, features_batch, labels_batch, learning_rate):
@@ -150,7 +155,8 @@ class DigitsModel(object):
             self.keep_prob: 0.25,
             self.learning_rate: learning_rate
         }
-        self.sess.run(self.training_op, feed_dict=feed_dict)
+        summary, _ = self.sess.run([self.merged, self.training_op], feed_dict=feed_dict)
+        return summary
 
     def get_accuracy(self, features, labels):
         feed_dict = {
@@ -158,7 +164,8 @@ class DigitsModel(object):
             self.y_correct: labels,
             self.keep_prob: 1.0
         }
-        return self.sess.run(self.accuracy, feed_dict=feed_dict)
+        summary, accuracy = self.sess.run([self.merged, self.accuracy], feed_dict=feed_dict)
+        return summary, accuracy
 
     def clarify(self, features):
         test_labels = self.sess.run(self.test_op, feed_dict={self.x: features, self.keep_prob: 1.0})
@@ -170,6 +177,24 @@ class DigitsModel(object):
         :return:
         """
         return self.sess.run([self.W_conv1, self.W_conv1_2, self.W_conv2, self.W_conv2_2])
+
+    def variable_summaries(self, var, name):
+        """Attach a lot of summaries to a Tensor."""
+        with tf.name_scope('summaries'):
+            mean = tf.reduce_mean(var)
+            tf.scalar_summary('mean/' + name, mean)
+            with tf.name_scope('stddev'):
+                stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+            tf.scalar_summary('stddev/' + name, stddev)
+            tf.scalar_summary('max/' + name, tf.reduce_max(var))
+            tf.scalar_summary('min/' + name, tf.reduce_min(var))
+            tf.histogram_summary(name, var)
+
+    def get_train_writer(self):
+        return self.train_writer
+
+    def get_validate_writer(self):
+        return self.validate_writer
 
 
 def generate_batch(features, labels, batch_size):
@@ -187,7 +212,7 @@ if __name__ == '__main__':
 
     print 'extended training features:', np.shape(features), 'extended training labels:', np.shape(labels)
     # training params
-    BATCH_SIZE = 180
+    BATCH_SIZE = 200
     TRAIN_SPLIT = 0.85  # training/validation split
     TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / BATCH_SIZE) * 200
     print 'training epochs: ', TRAINING_STEPS
@@ -203,22 +228,26 @@ if __name__ == '__main__':
 
     accuracy_history = []
 
-    learning_rate = 1e-3
+    learning_rate = 1e-4
     for epoch in xrange(TRAINING_STEPS):
 
         if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
-            accuracy = model.get_accuracy(features=validation_features, labels=validation_labels)
+            summary, accuracy = model.get_accuracy(features=validation_features, labels=validation_labels)
             accuracy_history.append(accuracy)
+            model.get_validate_writer().add_summary(summary, epoch)
             print 'learning_rate:', learning_rate, 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
 
-        if epoch == 10000:
-            learning_rate /= 10
         if epoch == 70000:
             learning_rate /= 10
         if epoch == 100000:
             learning_rate /= 10
         batch_features, batch_labels = generate_batch(train_features, train_labels, BATCH_SIZE)
-        model.train_step(batch_features, batch_labels, learning_rate)
+        summary = model.train_step(batch_features, batch_labels, learning_rate)
+        if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
+            model.get_train_writer().add_summary(summary, epoch)
+
+    model.get_validate_writer().close()
+    model.get_train_writer().close()
 
     # plot validation accuracy, and adjust params
     fig = plt.figure()
