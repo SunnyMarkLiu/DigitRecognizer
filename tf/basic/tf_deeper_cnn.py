@@ -167,7 +167,7 @@ def load_training_datas():
     """
     load training data, use one-hot encoding
     """
-    features, labels = lsd.load_train_data('../dataset/train.csv')
+    features, labels = lsd.load_train_data('../../dataset/train.csv')
     features_mat = np.mat(features)
     features_mat = np.divide(features_mat, 255.0)
     labels_mat = np.zeros([len(labels), 10])
@@ -180,7 +180,7 @@ def load_test_datas():
     """
     load training data, use one-hot encoding
     """
-    features = lsd.load_test_data('../dataset/test.csv')
+    features = lsd.load_test_data('../../dataset/test.csv')
     features_mat = np.mat(features)
     features_mat = np.divide(features_mat, 255.0)
     return features_mat
