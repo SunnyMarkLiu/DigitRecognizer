@@ -1,5 +1,7 @@
 # Kaggle Digit Recognizer
-kaggle competition - Digit Recognizer(https://www.kaggle.com/c/digit-recognizer)
+kaggle competition - Digit Recognizer(https://www.kaggle.com/c/digit-recognizer) <br/>
+Highly recommend to move to ![tensorflow part](https://github.com/SunnyMarkLiu/DigitRecognizer/tree/master/tf). 
+
 # Model
 1. extend training datas
 <p>Using translation operation and reshape the training/testing data(28x28) to 24x24, and get four time training/testing datas.</p>
