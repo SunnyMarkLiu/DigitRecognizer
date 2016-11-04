@@ -1,6 +1,5 @@
 # Kaggle Digit Recognizer
-kaggle competition - Digit Recognizer(https://www.kaggle.com/c/digit-recognizer) <br/>
-Highly recommend to move to ![tensorflow part](https://github.com/SunnyMarkLiu/DigitRecognizer/tree/master/tf). 
+kaggle competition - Digit Recognizer(https://www.kaggle.com/c/digit-recognizer)
 
 # Model
 1. extend training datas
