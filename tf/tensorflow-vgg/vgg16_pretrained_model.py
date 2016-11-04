@@ -17,7 +17,7 @@ VGG_MEAN = [103.939, 116.779, 123.68]
 
 
 class Vgg16(object):
-    def __init__(self, vgg_pretrained_model_file=None):
+    def __init__(self, vgg_pretrained_model_file=None, use_fullconnect=True):
         if vgg_pretrained_model_file is None:
             path = inspect.getfile(Vgg16)
             path = os.path.abspath(os.path.join(path, os.pardir))
@@ -26,6 +26,7 @@ class Vgg16(object):
             print path
         self.vgg_pretrained_model_dict = np.load(vgg_pretrained_model_file, encoding='latin1').item()
         print('npy file loaded')
+        self.use_fullconnect = use_fullconnect
 
     def build_model(self, rgb_images):
         """
@@ -73,22 +74,31 @@ class Vgg16(object):
         self.conv5_3 = self.create_conv_layer(self.conv5_2, "conv5_3")
         self.pool5 = self.max_pool(self.conv5_3, 'pool5')
 
-        # full-connect
-        # 注意 VGG16 的最后两个全连接层在训练时添加了 dropout 层（keep_prop=0.5）
-        self.fc6 = self.create_fullconnect_layer(self.pool5, 'fc6')
-        assert self.fc6.get_shape().as_list()[1:] == [4096]
-        self.relu_fc6 = tf.nn.relu(self.fc6, 'relu_fc6')
+        if self.use_fullconnect:
+            # full-connect
+            # 注意 VGG16 的最后两个全连接层在训练时添加了 dropout 层（keep_prop=0.5）
+            self.fc6 = self.create_fullconnect_layer(self.pool5, 'fc6')
+            assert self.fc6.get_shape().as_list()[1:] == [4096]
+            self.relu_fc6 = tf.nn.relu(self.fc6, 'relu_fc6')
 
-        self.fc7 = self.create_fullconnect_layer(self.relu_fc6, 'fc7')
-        self.relu_fc7 = tf.nn.relu(self.fc7, 'relu_fc7')
+            self.fc7 = self.create_fullconnect_layer(self.relu_fc6, 'fc7')
+            self.relu_fc7 = tf.nn.relu(self.fc7, 'relu_fc7')
 
-        self.fc8 = self.create_fullconnect_layer(self.relu_fc7, 'fc8')
-
-        self.softmax = tf.nn.softmax(self.fc8, name='softmax')
+            self.fc8 = self.create_fullconnect_layer(self.relu_fc7, 'fc8')
+            self.softmax = tf.nn.softmax(self.fc8, name='softmax')
 
         self.vgg_pretrained_model_dict = None
 
         print("build model finished: %ds" % (time.time() - start_time))
+
+    def get_vgg_out(self):
+        """
+        获取 vgg16 输出
+        """
+        if self.use_fullconnect:
+            return self.softmax
+        else:
+            return self.pool5
 
     def max_pool(self, inputs, name):
         return tf.nn.max_pool(inputs, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name=name)
@@ -101,10 +111,13 @@ class Vgg16(object):
         构建卷积层
         """
         with tf.variable_scope(layer_name):
-            conv_filter = self.get_vgg_conv_filter(layer_name)
-            conv_bias = self.get_vgg_bias(layer_name)
-            conv = tf.nn.conv2d(inputs, conv_filter, strides=[1, 1, 1, 1], padding='SAME', name=layer_name)
-            relu = tf.nn.relu(conv + conv_bias)
+            initial_filter = self.get_vgg_conv_filter(layer_name)
+            self.conv_filter = tf.Variable(initial_filter, name=layer_name + 'filter')
+            initial_conv_bias = self.get_vgg_bias(layer_name)
+            self.conv_bias = tf.Variable(initial_conv_bias, name=layer_name + 'bias')
+
+            self.conv = tf.nn.conv2d(inputs, self.conv_filter, strides=[1, 1, 1, 1], padding='SAME', name=layer_name)
+            relu = tf.nn.relu(self.conv + self.conv_bias)
 
             return relu
 
@@ -119,10 +132,12 @@ class Vgg16(object):
                 dim *= d
             flaten = tf.reshape(inputs, [-1, dim])
 
-            weights = self.get_vgg_fc_weights(layer_name)
-            biases = self.get_vgg_bias(layer_name)
+            initial_weights = self.get_vgg_fc_weights(layer_name)
+            self.fc_weights = tf.Variable(initial_weights, name=layer_name + 'fc_weights')
+            initial_biases = self.get_vgg_bias(layer_name)
+            self.fc_biases = tf.Variable(initial_biases, name=layer_name + 'fc_bias')
 
-            fc = tf.matmul(flaten, weights) + biases
+            fc = tf.matmul(flaten, self.fc_weights) + self.fc_biases
             return fc
 
     def get_vgg_conv_filter(self, layer_name):
