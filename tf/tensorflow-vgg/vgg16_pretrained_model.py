@@ -38,18 +38,19 @@ class Vgg16(object):
         start_time = time.time()
         rgb_scaled_images = rgb_images * 255.0
 
-        # Convert RGB to BGR, for opencv issue.
-        red, green, blue = tf.split(3, 3, rgb_scaled_images)
-        assert red.get_shape().as_list()[1:] == [224, 224, 1]
-        assert green.get_shape().as_list()[1:] == [224, 224, 1]
-        assert blue.get_shape().as_list()[1:] == [224, 224, 1]
-        bgr_images = tf.concat(3, [
-            blue - VGG_MEAN[0],
-            green - VGG_MEAN[1],
-            red - VGG_MEAN[2],
-        ])
-        assert bgr_images.get_shape().as_list()[1:] == [224, 224, 3]
+        # # Convert RGB to BGR, for opencv issue.
+        # red, green, blue = tf.split(3, 3, rgb_scaled_images)
+        # assert red.get_shape().as_list()[1:] == [224, 224, 1]
+        # assert green.get_shape().as_list()[1:] == [224, 224, 1]
+        # assert blue.get_shape().as_list()[1:] == [224, 224, 1]
+        # bgr_images = tf.concat(3, [
+        #     blue - VGG_MEAN[0],
+        #     green - VGG_MEAN[1],
+        #     red - VGG_MEAN[2],
+        # ])
+        # assert bgr_images.get_shape().as_list()[1:] == [224, 224, 3]
 
+        bgr_images = rgb_scaled_images
         # 构建 vgg16 模型，各层的参数参考: https://gist.github.com/ksimonyan/211839e770f7b538e2d8#file-readme-md
         self.conv1_1 = self.create_conv_layer(bgr_images, 'conv1_1')
         self.conv1_2 = self.create_conv_layer(self.conv1_1, 'conv1_2')
