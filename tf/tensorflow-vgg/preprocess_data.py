@@ -11,11 +11,8 @@ import numpy as np
 from PIL import Image
 import h5py
 import pandas as pd
-
-img_rows, img_cols = 28, 28
-input_rows, input_cols = 224, 224
-# mean value is from computing the average of each layer in the training data.
-VGG_MEAN = [103.939, 116.779, 123.68]
+from properties import scale_image_height, scale_image_width, \
+    pre_imgage_height, pre_imgage_width, VGG_MEAN
 
 
 def scale_train_test_datas():
@@ -23,12 +20,13 @@ def scale_train_test_datas():
     data = pd.read_csv('../../dataset/train.csv')
     images = data.iloc[:, 1:].values
     images = images.astype(np.float)
-    image_vgg = np.ndarray(shape=(images.shape[0], input_rows, input_cols, 3), dtype=np.float32)
-    images = images.reshape(images.shape[0], img_rows, img_cols)
+    image_vgg = np.ndarray(shape=(images.shape[0], scale_image_height, scale_image_width, 3),
+                           dtype=np.float32)
+    images = images.reshape(images.shape[0], pre_imgage_height, pre_imgage_width)
     labels_flat = data[[0]].values.ravel()
     for j in range(images.shape[0]):
         pil_im = Image.fromarray(images[j])
-        im_resize = pil_im.resize((input_rows, input_cols), Image.ANTIALIAS)
+        im_resize = pil_im.resize((scale_image_height, scale_image_width), Image.ANTIALIAS)
         im = np.array(im_resize.convert('RGB'), dtype=np.float32)
         im[:, :, 0] -= VGG_MEAN[0]
         im[:, :, 1] -= VGG_MEAN[1]
@@ -53,16 +51,16 @@ def scale_train_test_datas():
         print('Unable to save images:', e)
 
     print 'scale train datas done!'
-    
+
     print 'scale test datas...'
     data = pd.read_csv('../../dataset/test.csv')
     images = data.iloc[:, 0:].values
     images = images.astype(np.float)
-    image_vgg = np.ndarray(shape=(images.shape[0], input_rows, input_cols, 3), dtype=np.float32)
-    images = images.reshape(images.shape[0], img_rows, img_cols)
+    image_vgg = np.ndarray(shape=(images.shape[0], scale_image_height, scale_image_width, 3), dtype=np.float32)
+    images = images.reshape(images.shape[0], pre_imgage_height, pre_imgage_width)
     for j in range(images.shape[0]):
         pil_im = Image.fromarray(images[j])
-        im_resize = pil_im.resize((input_rows, input_cols), Image.ANTIALIAS)
+        im_resize = pil_im.resize((scale_image_height, scale_image_width), Image.ANTIALIAS)
         im = np.array(im_resize.convert('RGB'), dtype=np.float32)
         im[:, :, 0] -= VGG_MEAN[0]
         im[:, :, 1] -= VGG_MEAN[1]

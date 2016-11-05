@@ -90,7 +90,7 @@ class Vgg16(object):
 
         self.vgg_pretrained_model_dict = None
 
-        print("build model finished: %ds" % (time.time() - start_time))
+        print("build vgg16 model finished: %ds" % (time.time() - start_time))
 
     def get_vgg_out(self):
         """
@@ -119,7 +119,7 @@ class Vgg16(object):
 
             self.conv = tf.nn.conv2d(inputs, self.conv_filter, strides=[1, 1, 1, 1], padding='SAME', name=layer_name)
             relu = tf.nn.relu(self.conv + self.conv_bias)
-
+            print relu
             return relu
 
     def create_fullconnect_layer(self, inputs, layer_name):
