@@ -9,8 +9,7 @@ import numpy as np
 import pandas
 import tensorflow as tf
 from scipy import stats
-
-import extend_data
+import preprocess_data as datasets
 import vgg16_pretrained_model as vgg16
 
 
@@ -24,9 +23,7 @@ class DigitsModel(object):
 
     def build_model(self):
         # input features
-        self.x = tf.placeholder(tf.float32, shape=[None, 24 * 24])
-        # reshape features to 2d shape
-        self.x_image = tf.reshape(self.x, [-1, 24, 24, 1])
+        self.x_image = tf.placeholder(tf.float32, shape=[None, 24, 24, 3])
 
         # correct labels
         self.y_correct = tf.placeholder(tf.float32, [None, 10])
@@ -37,14 +34,14 @@ class DigitsModel(object):
         # learning_rate placeholder
         self.learning_rate = tf.placeholder(tf.float32, name='learning_rate')
 
-        self.read_out = self.vgg16.get_vgg_out()
+        self.softmax = self.vgg16.get_vgg_out()
 
     def init_training_run_op(self):
         """
         设置 session.run 的 op
         """
         # loss function
-        self.loss_function = tf.nn.softmax_cross_entropy_with_logits(self.read_out, self.y_correct)
+        self.loss_function = tf.nn.softmax_cross_entropy_with_logits(self.softmax, self.y_correct)
         cross_entropy = tf.reduce_mean(self.loss_function)
         tf.scalar_summary('cross entropy', cross_entropy)
 
@@ -52,13 +49,13 @@ class DigitsModel(object):
         self.training_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss_function)
 
         # match predicted values against the correct ones, True or False
-        self.predict_matches = tf.equal(tf.argmax(self.read_out, 1), tf.argmax(self.y_correct, 1))
+        self.predict_matches = tf.equal(tf.argmax(self.softmax, 1), tf.argmax(self.y_correct, 1))
 
         # accuracy metric
         self.accuracy = tf.reduce_mean(tf.cast(self.predict_matches, tf.float32))
         tf.scalar_summary('accuracy', self.accuracy)
         # test op
-        self.test_op = tf.argmax(self.read_out, 1)
+        self.test_op = tf.argmax(self.softmax, 1)
 
     def init(self):
         self.build_model()
@@ -76,7 +73,7 @@ class DigitsModel(object):
 
     def train_step(self, features_batch, labels_batch, learning_rate):
         feed_dict = {
-            self.x: features_batch,
+            self.x_image: features_batch,
             self.y_correct: labels_batch,
             self.keep_prob: 0.25,
             self.learning_rate: learning_rate
@@ -86,7 +83,7 @@ class DigitsModel(object):
 
     def get_accuracy(self, features, labels):
         feed_dict = {
-            self.x: features,
+            self.x_image: features,
             self.y_correct: labels,
             self.keep_prob: 1.0
         }
@@ -94,7 +91,7 @@ class DigitsModel(object):
         return summary, accuracy
 
     def clarify(self, features):
-        test_labels = self.sess.run(self.test_op, feed_dict={self.x: features, self.keep_prob: 1.0})
+        test_labels = self.sess.run(self.test_op, feed_dict={self.x_image: features, self.keep_prob: 1.0})
         return test_labels
 
     def variable_summaries(self, var, name):
@@ -125,11 +122,11 @@ def generate_batch(features, labels, batch_size):
 
 if __name__ == '__main__':
 
-    print 'load extended training data...'
-    features, labels = extend_data.load_extend_training_datas()
-    print 'load extended training data...Done!'
+    print 'load scaled training data...'
+    features, labels = datasets.load_scaled_training_datas()
+    print 'load scaled training data...Done!'
 
-    print 'extended training features:', np.shape(features), 'extended training labels:', np.shape(labels)
+    print 'scaled training features:', np.shape(features), 'scaled training labels:', np.shape(labels)
     # training params
     BATCH_SIZE = 200
     TRAIN_SPLIT = 0.85  # training/validation split
@@ -177,7 +174,7 @@ if __name__ == '__main__':
 
     print 'predict test datas...'
     # test data
-    test_features = extend_data.load_extend_test_datas()
+    test_features = datasets.load_scaled_test_datas()
     test_batch_size = 100
     extend_test_labels = np.array([], dtype=np.int32)
     for i in range(len(test_features) / test_batch_size):
