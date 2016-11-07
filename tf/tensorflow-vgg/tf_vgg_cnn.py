@@ -113,8 +113,8 @@ class DigitsModel(object):
             self.keep_prob: 0.25,
             self.learning_rate: learning_rate
         }
-        summary, _ = self.sess.run([self.merged, self.training_op], feed_dict=feed_dict)
-        return summary
+        summary, _, accuracy = self.sess.run([self.merged, self.training_op, self.accuracy], feed_dict=feed_dict)
+        return summary, accuracy
 
     def get_accuracy(self, features, labels):
         feed_dict = {
@@ -174,10 +174,11 @@ if __name__ == '__main__':
 
     print 'scaled training features:', np.shape(features), 'scaled training labels:', np.shape(labels)
     # training params
-    TRAIN_BATCH_SIZE = 50
+    TRAIN_BATCH_SIZE = 100
     VALIDATE_BATCH_SIZE = 100
     TRAIN_SPLIT = 0.90  # training/validation split
-    TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / TRAIN_BATCH_SIZE) * 50
+    EPOCH = 60
+    TRAINING_STEPS = int(len(features) * TRAIN_SPLIT / TRAIN_BATCH_SIZE)
     print 'training epochs: ', TRAINING_STEPS
     # split data into training and validation sets
     train_samples = int(len(features) * TRAIN_SPLIT)
@@ -189,23 +190,24 @@ if __name__ == '__main__':
     accuracy_history = []
 
     temp_validate_accuracy = 0
-    learning_rate = 1e-4
-    for epoch in xrange(TRAINING_STEPS):
+    learning_rate = 1e-3
+    for epoch in range(EPOCH):
+        for i in xrange(TRAINING_STEPS):
 
-        if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
-            batch_features, batch_labels = generate_batch(validation_features, validation_labels, VALIDATE_BATCH_SIZE)
-            summary, accuracy = model.get_accuracy(features=batch_features, labels=batch_labels)
-            accuracy_history.append(accuracy)
-            model.get_validate_writer().add_summary(summary, epoch)
-            print 'learning_rate:', learning_rate, 'total: ', TRAINING_STEPS, '\tstep ', epoch, '\tvalidation accuracy: ', accuracy
+            batch_features, batch_labels = generate_batch(train_features, train_labels, TRAIN_BATCH_SIZE)
+            summary, accuracy = model.train_step(batch_features, batch_labels, learning_rate)
+            print 'learning_rate:', learning_rate, 'total: ', TRAINING_STEPS, '\tstep ', i, '\ttraining accuracy: ', accuracy
+            if i % 100 == 0 or i == TRAINING_STEPS - 1:
+                model.get_train_writer().add_summary(summary, i)
             if accuracy < temp_validate_accuracy and learning_rate > 1e-10:  # 如果验证集减小
                 learning_rate /= 3
             temp_validate_accuracy = accuracy
 
-        batch_features, batch_labels = generate_batch(train_features, train_labels, TRAIN_BATCH_SIZE)
-        summary = model.train_step(batch_features, batch_labels, learning_rate)
-        if epoch % 100 == 0 or epoch == TRAINING_STEPS - 1:
-            model.get_train_writer().add_summary(summary, epoch)
+        batch_features, batch_labels = generate_batch(validation_features, validation_labels, VALIDATE_BATCH_SIZE)
+        summary, accuracy = model.get_accuracy(features=batch_features, labels=batch_labels)
+        accuracy_history.append(accuracy)
+        model.get_validate_writer().add_summary(summary, epoch)
+        print 'epoch: ', epoch, '\tvalidation accuracy: ', accuracy
 
     model.get_validate_writer().close()
     model.get_train_writer().close()
